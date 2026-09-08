@@ -118,6 +118,17 @@ body.show-notes .passage .tn-ref{font-weight:700;margin-right:6px}
 .summary li{margin:0 0 3px}
 .names p{margin:0 0 6px}
 .names .where{display:inline-block;min-width:44px;font-weight:700;color:var(--accent);margin-right:6px}
+.player{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:13px;color:var(--soft)}
+.player .btn{padding:7px 14px;font-size:14px}
+.player input[type=range]{width:110px}
+.card.questions{padding:12px 14px}
+.card.questions b{display:block;font-size:13px;letter-spacing:.4px;text-transform:uppercase;
+  color:var(--soft);margin-bottom:6px}
+.card.questions .prompts{background:transparent;border:0;padding:0 0 0 20px;margin:0}
+.summary{float:right;width:52%;margin:0 0 10px 14px;font-size:14px;padding:10px 12px}
+.summary ul{padding-left:16px}
+.memo{max-height:52vh;padding:12px 14px 14px}
+.memo textarea{min-height:16vh;font-size:16px}
 footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
   text-align:left;padding:0 0 8px}
 .fab{position:fixed;right:12px;bottom:14px;z-index:18;display:flex;gap:8px;align-items:center}
@@ -175,32 +186,42 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
       <button class="link" id="listenBtn">listen</button>
       <button class="link" id="saveDayBtn">save this day</button>
       <button class="link" id="todayBtn">today</button>
-      <button class="link" id="reloadText">reload</button>
       <button class="link" id="snagBtn">something's wrong</button>
       <button class="link hide" id="prevDay" aria-label="Previous day">&#8249;</button>
       <button class="link hide" id="nextDay" aria-label="Next day">&#8250;</button>
     </p>
+    <div class="player hide" id="player">
+      <button class="btn ghost" id="playPause">Pause</button>
+      <button class="btn ghost" id="playStop">Stop</button>
+      <label for="playRate">Speed</label>
+      <input type="range" id="playRate" min="0.6" max="1.6" step="0.1">
+      <span id="rateNow"></span>
+    </div>
   </div>
 
   <div class="card">
     <div class="passage" id="passage"><p class="empty">Loading the chapter&hellip;</p></div>
   </div>
 
-  <div class="card" id="writeCard">
-    <label class="check"><input type="checkbox" id="fDone"> I read it today</label>
-
-    <label for="fSummary">My summary of this chapter</label>
+  <div class="card questions">
+    <b>Three questions to answer</b>
     <ul class="prompts">
       <li>What happens in this chapter?</li>
       <li>Who is it about, and what do they do?</li>
       <li>What is it getting at?</li>
     </ul>
-    <textarea id="fSummary" class="taller" placeholder="Answer those three in your own words. This box grows as you write."></textarea>
+  </div>
+
+  <div class="card" id="writeCard">
+    <label class="check"><input type="checkbox" id="fDone"> I read it today</label>
+
+    <label for="fSummary">My summary of this chapter</label>
+    <textarea id="fSummary" class="taller" placeholder="In your own words. This box grows as you write."></textarea>
 
     <label for="fVerse">The verse that stood out</label>
     <textarea id="fVerse" placeholder="e.g. John 1:5 &mdash; The light shines in the darkness&hellip;"></textarea>
 
-    <label for="fLearnt">What I learnt today <span class="hint">(understanding)</span></label>
+    <label for="fLearnt">Understanding</label>
     <textarea id="fLearnt" class="tall" placeholder="In my own words: what is this chapter actually saying?"></textarea>
 
     <label for="fApply">How I will use it</label>
@@ -210,7 +231,7 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
     <textarea id="fPrayer" placeholder="Anything you want to come back to."></textarea>
 
     <label for="fTags">Tags</label>
-    <input type="text" id="fTags" placeholder="patience, work, family">
+    <input type="text" id="fTags" placeholder="e.g. patience, marriage, money, fear, forgiveness">
 
     <div class="row">
       <button class="btn" id="saveBtn">Save today</button>
@@ -282,6 +303,7 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
 
     <div class="row">
       <button class="btn ghost" id="startToday">Start the plan again from today</button>
+      <button class="btn ghost" id="reloadText">Reload today's chapter</button>
     </div>
   </div>
 
@@ -514,7 +536,7 @@ function jset(key, value){
 
 const DEFAULT_SETTINGS = { plan:"nt", start:null, pointedAt:null, translation:"NLT",
                            nltKey:"", notes:false, syncUrl:"", lastSync:null,
-                           font:"sans", size:19 };
+                           font:"sans", size:19, rate:0.95 };
 let settings = Object.assign({}, DEFAULT_SETTINGS, jget("settings", {}));
 let entries  = jget("entries", {});
 
@@ -548,7 +570,7 @@ function daysBetween(a, b){ return Math.round((toDate(b) - toDate(a)) / 86400000
    short one. */
 function shortDate(s){
   const d = toDate(s);
-  return d.toLocaleDateString(undefined, { weekday:"short", day:"numeric", month:"short" });
+  return d.toLocaleDateString(undefined, { day:"numeric", month:"short" });
 }
 function prettyDate(s){
   const d = toDate(s);
@@ -776,6 +798,7 @@ function verseText(scope, marks, i){
    the underlines are still there when you come back to that day. */
 let chosen = [];
 let lastQuote = "";
+let chosenDoneByHand = false;
 
 /* Underline every chosen verse. Verses are not elements - a prose paragraph
    holds several, and one line of a psalm can span several paragraphs - so the
@@ -1033,12 +1056,14 @@ function readForm(){
   e.prayer = document.getElementById("fPrayer").value;
   e.tags = document.getElementById("fTags").value.split(",").map(function(t){return t.trim();}).filter(Boolean);
   e.verses = chosen.slice();
+  if (chosenDoneByHand) e.doneByHand = true;
   e.quote = lastQuote;
   return e;
 }
 function writeForm(e){
   chosen = (e.verses || []).slice();
   lastQuote = e.quote || "";
+  chosenDoneByHand = !!e.doneByHand;
   document.getElementById("fDone").checked = !!e.done;
   document.getElementById("fVerse").value = e.verse || "";
   document.getElementById("fSummary").value = e.summary || "";
@@ -1050,6 +1075,16 @@ function writeForm(e){
 function saveEntry(showFlag){
   const e = readForm();
   const now = new Date().toISOString();
+
+  /* Writing about a chapter means you read it. Ticking the box as well was
+     busywork. Only until the box is touched by hand - after that the tick is
+     hers and the app leaves it alone. */
+  const written = e.verse.trim() || (e.summary || "").trim() || e.learnt.trim() ||
+                  e.apply.trim() || e.prayer.trim() || (e.verses || []).length;
+  if (written && !e.done && !e.doneByHand){
+    e.done = true;
+    document.getElementById("fDone").checked = true;
+  }
   if (isBlank(e)) { delete entries[viewDate]; }
   else {
     if (!e.created) e.created = now;
@@ -1227,7 +1262,7 @@ function renderProgress(){
   const bar = document.getElementById("progressBar");
 
   const isToday = viewDate === todayStr();
-  document.getElementById("whenLabel").textContent = (isToday ? "Today · " : "") + shortDate(viewDate);
+  document.getElementById("whenLabel").textContent = isToday ? "Today" : shortDate(viewDate);
 
   if (info.state === "before"){
     refEl.textContent = "Not started yet";
@@ -1416,6 +1451,8 @@ function fillSettings(){
     : "Chapter text from bible-api.com. WEB and KJV are public domain.";
   document.getElementById("setFont").value = settings.font || "sans";
   document.getElementById("setSize").value = settings.size || 19;
+  document.getElementById("playRate").value = settings.rate || 0.95;
+  document.getElementById("rateNow").textContent = (settings.rate || 0.95).toFixed(1) + "x";
   applyType();
   document.getElementById("nltCard").classList.toggle("hide", translation().source !== "nlt");
   document.body.classList.toggle("show-notes", !!settings.notes);
@@ -1441,7 +1478,12 @@ let saveTimer = null;
   el.addEventListener(ev, function(){
     clearTimeout(saveTimer);
     saveTimer = setTimeout(function(){ saveEntry(false); }, 700);
-    if (id === "fDone") saveEntry(false);
+    if (id === "fDone"){
+      const e = entries[viewDate];
+      if (e) e.doneByHand = true;
+      chosenDoneByHand = true;
+      saveEntry(false);
+    }
   });
 });
 document.getElementById("saveBtn").addEventListener("click", function(){ saveEntry(true); });
@@ -1462,6 +1504,19 @@ document.getElementById("todayBtn").addEventListener("click", function(){ goTo(t
 document.getElementById("reloadText").addEventListener("click", function(){ loadPassage(true); });
 document.getElementById("listenBtn").addEventListener("click", function(){
   if (speaking()) stopListening(); else startListening();
+});
+document.getElementById("playStop").addEventListener("click", stopListening);
+document.getElementById("playPause").addEventListener("click", function(ev){
+  const s2 = window.speechSynthesis;
+  if (!s2) return;
+  if (s2.paused){ s2.resume(); ev.target.textContent = "Pause"; }
+  else { s2.pause(); ev.target.textContent = "Play"; }
+});
+document.getElementById("playRate").addEventListener("input", function(ev){
+  settings.rate = parseFloat(ev.target.value);
+  jset("settings", settings);
+  document.getElementById("rateNow").textContent = settings.rate.toFixed(1) + "x";
+  if (readChunks.length) speakFrom(readAt);   /* carry on, at the new speed */
 });
 document.getElementById("saveDayBtn").addEventListener("click", function(){
   const info = chapterFor(viewDate);
@@ -1676,10 +1731,39 @@ function readingText(){
 
 function speaking(){ return window.speechSynthesis && window.speechSynthesis.speaking; }
 
+let readChunks = [];
+let readAt = 0;
+
+function showPlayer(on){
+  document.getElementById("player").classList.toggle("hide", !on);
+  document.getElementById("listenBtn").textContent = on ? "reading" : "listen";
+}
+
 function stopListening(){
   if (window.speechSynthesis) window.speechSynthesis.cancel();
-  const btn = document.getElementById("listenBtn");
-  if (btn) btn.textContent = "listen";
+  readChunks = [];
+  readAt = 0;
+  showPlayer(false);
+  const pause = document.getElementById("playPause");
+  if (pause) pause.textContent = "Pause";
+}
+
+/* Speak from a given piece onwards. Changing the speed cannot be done to an
+   utterance already in flight, so the queue is rebuilt from where it had got
+   to - which is why the piece being spoken is tracked. */
+function speakFrom(index){
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  readAt = index;
+  for (let i = index; i < readChunks.length; i++){
+    const say = new SpeechSynthesisUtterance(readChunks[i]);
+    say.rate = settings.rate || 0.95;
+    say.onstart = (function(at){ return function(){ readAt = at; }; })(i);
+    if (i === readChunks.length - 1) say.onend = stopListening;
+    window.speechSynthesis.speak(say);
+  }
+  showPlayer(true);
+  document.getElementById("playPause").textContent = "Pause";
 }
 
 function startListening(){
@@ -1690,23 +1774,15 @@ function startListening(){
   const text = readingText();
   if (!text){ toast("No chapter loaded to read", null, null); return; }
 
-  window.speechSynthesis.cancel();
   const pieces = text.match(/[^.!?]+[.!?]*\s*/g) || [text];
-  const chunks = [];
+  readChunks = [];
   let buffer = "";
   pieces.forEach(function(piece){
-    if ((buffer + piece).length > 200){ chunks.push(buffer); buffer = piece; }
+    if ((buffer + piece).length > 200){ readChunks.push(buffer); buffer = piece; }
     else buffer += piece;
   });
-  if (buffer.trim()) chunks.push(buffer);
-
-  chunks.forEach(function(chunk, i){
-    const say = new SpeechSynthesisUtterance(chunk);
-    say.rate = 0.95;
-    if (i === chunks.length - 1) say.onend = stopListening;
-    window.speechSynthesis.speak(say);
-  });
-  document.getElementById("listenBtn").textContent = "stop";
+  if (buffer.trim()) readChunks.push(buffer);
+  speakFrom(0);
 }
 
 /* ---------------------------- save one chapter --------------------------
@@ -1741,7 +1817,7 @@ function applyType(){
    the journal uses. Held on the device until they get through, so a note made
    with no signal is not lost.
 ------------------------------------------------------------------------- */
-const APP_VERSION = "v19";
+const APP_VERSION = "v20";
 
 function snags(){ return jget("snags", []); }
 
