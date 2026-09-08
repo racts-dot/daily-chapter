@@ -50,7 +50,6 @@ nav button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink
 .passage{font-size:var(--read-size,19px);line-height:1.68}
 body.serif .passage{font-family:Georgia,"Times New Roman",serif}
 input[type=range]{width:100%;accent-color:var(--accent)}
-.passage .src{margin-top:14px;font-size:13px;color:var(--soft)}
 label{display:block;font-size:15px;font-weight:600;margin:16px 0 6px}
 label .hint{font-weight:400;color:var(--soft)}
 textarea,input[type=text],input[type=date],select{
@@ -121,7 +120,6 @@ body.show-notes .passage .tn-ref{font-weight:700;margin-right:6px}
 .summary li{margin:0 0 3px}
 .names p{margin:0 0 6px}
 .names .where{display:inline-block;min-width:44px;font-weight:700;color:var(--accent);margin-right:6px}
-.names .caveat{margin-top:8px;font-size:13px;color:var(--soft)}
 .copyright{margin-top:16px;font-size:12px;line-height:1.5;color:var(--soft)}
 .fab{position:fixed;right:12px;bottom:14px;z-index:18;display:flex;gap:8px;align-items:center}
 .fab button{font:inherit;font-size:22px;font-weight:600;width:52px;height:52px;border:1px solid var(--line);
@@ -930,10 +928,6 @@ function namesIn(verses){
     line.appendChild(document.createTextNode(f.text));
     card.appendChild(line);
   });
-  const note = document.createElement("p");
-  note.className = "caveat";
-  note.textContent = "Only the names the NLT explains in its own footnotes.";
-  card.appendChild(note);
   return card;
 }
 
@@ -954,10 +948,6 @@ function renderPassage(payload){
   const names = namesIn(verses);
   if (names) box.appendChild(names);
 
-  const src = document.createElement("p");
-  src.className = "src";
-  src.textContent = payload.name + " · tap a verse to keep it";
-  box.appendChild(src);
   if (payload.copyright){
     const note = document.createElement("p");
     note.className = "copyright";
