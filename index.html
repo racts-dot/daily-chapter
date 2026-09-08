@@ -42,7 +42,7 @@ nav button[aria-selected="true"]{color:var(--ink);font-weight:700;border-bottom-
 .tinyrow .when{flex:1 0 auto;white-space:nowrap}
 .link{font:inherit;font-size:13px;background:transparent;border:0;padding:0;color:var(--accent);
   text-decoration:underline;cursor:pointer}
-.ref{font-size:32px;line-height:1.15;margin:2px 0 6px;font-weight:600}
+.ref{font-size:22px;line-height:1.2;margin:0 0 2px;font-weight:700;letter-spacing:.2px}
 .sub{color:var(--soft);font-size:15px;margin:0 0 12px}
 .bar{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin:10px 0 4px}
 .bar i{display:block;height:100%;background:var(--accent)}
@@ -1740,7 +1740,7 @@ function applyType(){
    the journal uses. Held on the device until they get through, so a note made
    with no signal is not lost.
 ------------------------------------------------------------------------- */
-const APP_VERSION = "v15";
+const APP_VERSION = "v16";
 
 function snags(){ return jget("snags", []); }
 
