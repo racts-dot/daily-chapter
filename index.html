@@ -331,6 +331,7 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
       <button class="btn danger" id="wipe">Delete everything</button>
     </div>
     <p class="sub" id="storeInfo"></p>
+    <p class="sub" id="versionLine"></p>
   </div>
 </section>
 
@@ -1428,6 +1429,10 @@ function fillSettings(){
     const k = localStorage.key(i);
     if (k && k.indexOf(NS) === 0) bytes += k.length + (localStorage.getItem(k) || "").length;
   }
+  document.getElementById("versionLine").textContent =
+    "App version " + APP_VERSION + " · " + (location.protocol === "file:"
+      ? "opened as a file (no home-screen icon, no automatic updates)"
+      : "opened from the web (updates when you close and reopen)");
   document.getElementById("storeInfo").textContent =
     Object.keys(entries).length + " entries · about " + Math.round(bytes/1024) + " KB used on this device.";
 }
@@ -1740,7 +1745,7 @@ function applyType(){
    the journal uses. Held on the device until they get through, so a note made
    with no signal is not lost.
 ------------------------------------------------------------------------- */
-const APP_VERSION = "v16";
+const APP_VERSION = "v17";
 
 function snags(){ return jget("snags", []); }
 
