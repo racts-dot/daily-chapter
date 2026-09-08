@@ -32,12 +32,14 @@ body{
 header{padding:0 0 10px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
 header h1{font-size:20px;margin:0;letter-spacing:.2px}
 header .streak{margin-left:auto;font-size:15px;color:var(--soft)}
-nav{display:flex;gap:6px;margin:10px 0 18px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:5px}
-nav button{flex:1;font:inherit;font-size:16px;padding:9px 6px;border:0;border-radius:10px;background:transparent;color:var(--soft);cursor:pointer}
-nav button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+nav{display:flex;gap:22px;margin:2px 0 16px;padding:0}
+nav button{font:inherit;font-size:15px;padding:4px 0;border:0;background:transparent;
+  color:var(--soft);cursor:pointer;border-bottom:2px solid transparent}
+nav button[aria-selected="true"]{color:var(--ink);font-weight:700;border-bottom-color:var(--accent)}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:var(--pad);margin:0 0 16px}
-.tinyrow{display:flex;align-items:baseline;gap:14px;margin:10px 0 0;font-size:13px;color:var(--soft)}
-.tinyrow .when{flex:1}
+.tinyrow{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 14px;margin:10px 0 0;
+  font-size:13px;color:var(--soft)}
+.tinyrow .when{flex:1 0 auto;white-space:nowrap}
 .link{font:inherit;font-size:13px;background:transparent;border:0;padding:0;color:var(--accent);
   text-decoration:underline;cursor:pointer}
 .ref{font-size:32px;line-height:1.15;margin:2px 0 6px;font-weight:600}
@@ -548,6 +550,13 @@ function toDate(s){ const p = s.split("-").map(Number); return new Date(p[0], p[
 function shift(s, days){ const d = toDate(s); d.setDate(d.getDate()+days); 
   return [d.getFullYear(), String(d.getMonth()+1).padStart(2,"0"), String(d.getDate()).padStart(2,"0")].join("-"); }
 function daysBetween(a, b){ return Math.round((toDate(b) - toDate(a)) / 86400000); }
+/* The long date is right in the journal and the exports. In the one-line row
+   under the chapter it wraps into a mess on a 360px phone, so that row gets a
+   short one. */
+function shortDate(s){
+  const d = toDate(s);
+  return d.toLocaleDateString(undefined, { weekday:"short", day:"numeric", month:"short" });
+}
 function prettyDate(s){
   const d = toDate(s);
   return d.toLocaleDateString(undefined, {weekday:"long", day:"numeric", month:"long", year:"numeric"});
@@ -1221,7 +1230,7 @@ function renderProgress(){
   const bar = document.getElementById("progressBar");
 
   const isToday = viewDate === todayStr();
-  document.getElementById("whenLabel").textContent = (isToday ? "Today · " : "") + prettyDate(viewDate);
+  document.getElementById("whenLabel").textContent = (isToday ? "Today · " : "") + shortDate(viewDate);
 
   if (info.state === "before"){
     refEl.textContent = "Not started yet";
@@ -1731,7 +1740,7 @@ function applyType(){
    the journal uses. Held on the device until they get through, so a note made
    with no signal is not lost.
 ------------------------------------------------------------------------- */
-const APP_VERSION = "v14";
+const APP_VERSION = "v15";
 
 function snags(){ return jget("snags", []); }
 
