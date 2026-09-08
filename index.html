@@ -47,7 +47,9 @@ nav button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink
 .notice{font-size:15px;padding:10px 12px;border-radius:10px;background:rgba(122,92,46,.10);border:1px solid var(--line);margin:10px 0}
 .notice.warn{color:var(--warn)}
 .notice button{font:inherit;font-size:15px;background:transparent;border:0;color:var(--accent);text-decoration:underline;cursor:pointer;padding:0}
-.passage{font-size:19px;line-height:1.68}
+.passage{font-size:var(--read-size,19px);line-height:1.68}
+body.serif .passage{font-family:Georgia,"Times New Roman",serif}
+input[type=range]{width:100%;accent-color:var(--accent)}
 .passage .src{margin-top:14px;font-size:13px;color:var(--soft)}
 label{display:block;font-size:15px;font-weight:600;margin:16px 0 6px}
 label .hint{font-weight:400;color:var(--soft)}
@@ -174,6 +176,8 @@ body.show-notes .passage .tn-ref{font-weight:700;margin-right:6px}
     <div id="behindNotice" class="notice hide"></div>
     <p class="tinyrow">
       <span class="when" id="whenLabel"></span>
+      <button class="link" id="listenBtn">listen</button>
+      <button class="link" id="saveDayBtn">save this day</button>
       <button class="link" id="todayBtn">today</button>
       <button class="link" id="reloadText">reload</button>
       <button class="link hide" id="prevDay" aria-label="Previous day">&#8249;</button>
@@ -267,6 +271,15 @@ body.show-notes .passage .tn-ref{font-weight:700;margin-right:6px}
 
     <label for="setTrans">Translation</label>
     <select id="setTrans"></select>
+
+    <label for="setFont">Typeface</label>
+    <select id="setFont">
+      <option value="sans">Plain (screen)</option>
+      <option value="serif">Book (serif)</option>
+    </select>
+
+    <label for="setSize">Text size <span class="hint" id="sizeNow"></span></label>
+    <input type="range" id="setSize" min="16" max="30" step="1">
 
     <label class="check" style="margin-top:16px"><input type="checkbox" id="setNotes"> Show the translators' footnotes</label>
 
@@ -476,7 +489,8 @@ function jset(key, value){
 }
 
 const DEFAULT_SETTINGS = { plan:"nt", start:null, pointedAt:null, translation:"NLT",
-                           nltKey:"", notes:false, syncUrl:"", lastSync:null };
+                           nltKey:"", notes:false, syncUrl:"", lastSync:null,
+                           font:"sans", size:19 };
 let settings = Object.assign({}, DEFAULT_SETTINGS, jget("settings", {}));
 let entries  = jget("entries", {});
 
@@ -682,6 +696,40 @@ function markBefore(marks, node){
   return found;
 }
 
+/* Which verse was actually tapped.
+
+   Reading order alone is not enough: NLT prose puts four or five verses inside
+   ONE paragraph, so "the paragraph you touched" does not name a verse, and a
+   tap in the margin lands on no word at all. So measure. Each verse occupies a
+   set of line boxes on screen; find the one the finger is inside, and if the
+   finger is in the margin, take the line box on that row. */
+function verseAtPoint(scope, marks, ev){
+  const x = ev.clientX, y = ev.clientY;
+  const edge = scope.getBoundingClientRect();
+  let best = -1, bestGap = Infinity;
+
+  for (let i = 0; i < marks.length; i++){
+    const range = document.createRange();
+    range.setStartBefore(marks[i]);
+    if (i + 1 < marks.length) range.setEndBefore(marks[i + 1]);
+    else range.setEnd(scope, scope.childNodes.length);
+
+    const boxes = range.getClientRects();
+    for (let b = 0; b < boxes.length; b++){
+      const box = boxes[b];
+      if (box.height < 2) continue;
+      if (y < box.top - 2 || y > box.bottom + 2) continue;   /* wrong row */
+      if (x >= box.left - 2 && x <= box.right + 2) return i; /* on the words */
+      /* Same row but out in the margin: remember how far off it was. */
+      const gap = x < box.left ? box.left - x : x - box.right;
+      if (gap < bestGap && x >= edge.left - 40 && x <= edge.right + 40){
+        bestGap = gap; best = i;
+      }
+    }
+  }
+  return best;
+}
+
 function verseText(scope, marks, i){
   const range = document.createRange();
   range.setStartAfter(marks[i]);
@@ -775,7 +823,8 @@ function wireVerseTaps(scope, ref){
   applySelection(scope, chosen);
 
   scope.addEventListener("click", function(ev){
-    const i = markBefore(marks, ev.target);
+    let i = verseAtPoint(scope, marks, ev);
+    if (i < 0) i = markBefore(marks, ev.target);   /* geometry failed: fall back to reading order */
     if (i < 0) return;
     const number = parseInt(marks[i].textContent, 10);
     if (isNaN(number)) return;
@@ -1251,6 +1300,7 @@ function render(){
 }
 function goTo(dateStr){
   saveEntry(false);
+  stopListening();
   viewDate = dateStr;
   render();
   window.scrollTo({top:0, behavior:"smooth"});
@@ -1338,6 +1388,9 @@ function fillSettings(){
   document.getElementById("setSync").value = settings.syncUrl || "";
   syncStatus();
   document.getElementById("setNotes").checked = !!settings.notes;
+  document.getElementById("setFont").value = settings.font || "sans";
+  document.getElementById("setSize").value = settings.size || 19;
+  applyType();
   document.getElementById("nltCard").classList.toggle("hide", translation().source !== "nlt");
   document.body.classList.toggle("show-notes", !!settings.notes);
   document.getElementById("pageFooter").textContent = translation().source === "nlt"
@@ -1379,6 +1432,21 @@ document.getElementById("prevDay").addEventListener("click", function(){ goTo(sh
 document.getElementById("nextDay").addEventListener("click", function(){ goTo(shift(viewDate,  1)); });
 document.getElementById("todayBtn").addEventListener("click", function(){ goTo(todayStr()); });
 document.getElementById("reloadText").addEventListener("click", function(){ loadPassage(true); });
+document.getElementById("listenBtn").addEventListener("click", function(){
+  if (speaking()) stopListening(); else startListening();
+});
+document.getElementById("saveDayBtn").addEventListener("click", function(){
+  const info = chapterFor(viewDate);
+  const name = (info.state === "ok" ? prettyRef(info.item.ref).replace(/[^\w]+/g, "-") : "day") +
+               "-" + viewDate + ".md";
+  download(name, dayAsMarkdown(), "text/markdown;charset=utf-8");
+});
+document.getElementById("setFont").addEventListener("change", function(ev){
+  settings.font = ev.target.value; jset("settings", settings); applyType();
+});
+document.getElementById("setSize").addEventListener("input", function(ev){
+  settings.size = parseInt(ev.target.value, 10); jset("settings", settings); applyType();
+});
 document.getElementById("search").addEventListener("input", renderList);
 
 document.getElementById("expJson").addEventListener("click", function(){
@@ -1565,6 +1633,80 @@ document.getElementById("wipe").addEventListener("click", function(){
   jset("settings", settings); plan = buildPlan(settings.plan);
   fillSettings(); goTo(todayStr());
 });
+
+/* -------------------------------- listening ------------------------------
+   The phone's own voice, so it costs nothing, needs no account, and works with
+   the screen off. Chunked, because mobile browsers cut a long utterance off.
+------------------------------------------------------------------------- */
+function readingText(){
+  const box = document.querySelector("#passage .verses");
+  if (!box) return "";
+  const copy = box.cloneNode(true);
+  Array.prototype.forEach.call(copy.querySelectorAll(".tn, .a-tn, .vn"), function(el){ el.remove(); });
+  return copy.textContent.replace(/\s+/g, " ").trim();
+}
+
+function speaking(){ return window.speechSynthesis && window.speechSynthesis.speaking; }
+
+function stopListening(){
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  const btn = document.getElementById("listenBtn");
+  if (btn) btn.textContent = "listen";
+}
+
+function startListening(){
+  if (!("speechSynthesis" in window)){
+    toast("This browser cannot read aloud", null, null);
+    return;
+  }
+  const text = readingText();
+  if (!text){ toast("No chapter loaded to read", null, null); return; }
+
+  window.speechSynthesis.cancel();
+  const pieces = text.match(/[^.!?]+[.!?]*\s*/g) || [text];
+  const chunks = [];
+  let buffer = "";
+  pieces.forEach(function(piece){
+    if ((buffer + piece).length > 200){ chunks.push(buffer); buffer = piece; }
+    else buffer += piece;
+  });
+  if (buffer.trim()) chunks.push(buffer);
+
+  chunks.forEach(function(chunk, i){
+    const say = new SpeechSynthesisUtterance(chunk);
+    say.rate = 0.95;
+    if (i === chunks.length - 1) say.onend = stopListening;
+    window.speechSynthesis.speak(say);
+  });
+  document.getElementById("listenBtn").textContent = "stop";
+}
+
+/* ---------------------------- save one chapter --------------------------
+   Her own writing and the verses she chose to keep - not the whole chapter.
+   A file that is nothing but the NLT is not hers to hand around.
+------------------------------------------------------------------------- */
+function dayAsMarkdown(){
+  saveEntry(false);
+  const e = currentEntry();
+  const ref = prettyRef(e.ref || "");
+  let out = "# " + ref + "\n\n" + prettyDate(viewDate) + (e.done ? " · read" : "") + "\n";
+  if (e.summary) out += "\n## My summary\n\n" + e.summary + "\n";
+  if (e.verse)   out += "\n## The verse that stood out\n\n" + e.verse + "\n";
+  if (e.learnt)  out += "\n## What I learnt\n\n" + e.learnt + "\n";
+  if (e.apply)   out += "\n## How I will use it\n\n" + e.apply + "\n";
+  if (e.prayer)  out += "\n## Prayer / question\n\n" + e.prayer + "\n";
+  if ((e.tags || []).length) out += "\nTags: " + e.tags.join(", ") + "\n";
+  if (e.verse && translation().source === "nlt") out += "\n---\n\n" + NLT_COPYRIGHT + "\n";
+  return out;
+}
+
+/* -------------------------------- how it reads --------------------------- */
+function applyType(){
+  document.body.classList.toggle("serif", settings.font === "serif");
+  document.documentElement.style.setProperty("--read-size", (settings.size || 19) + "px");
+  const label = document.getElementById("sizeNow");
+  if (label) label.textContent = "(" + (settings.size || 19) + " px)";
+}
 
 /* ------------------------------ floating bar ----------------------------- */
 function fabRefresh(){
