@@ -86,7 +86,6 @@ textarea.taller{min-height:260px}
 .stat span{font-size:14px;color:var(--soft)}
 .empty{color:var(--soft);font-size:16px}
 .hide{display:none !important}
-footer{color:var(--soft);font-size:13px;text-align:center;padding:8px 0 24px}
 /* --- markup that comes back from the NLT service ------------------------ */
 .passage p{margin:0 0 10px}
 .passage .vn{font-size:12px;font-weight:700;color:var(--accent);vertical-align:super;margin-right:5px}
@@ -327,7 +326,6 @@ body.show-notes .passage .tn-ref{font-weight:700;margin-right:6px}
   </div>
 </section>
 
-<footer id="pageFooter"></footer>
 </div>
 
 <!-- Follows you down the chapter, so moving on or jotting something never
@@ -1383,9 +1381,7 @@ function fillSettings(){
   applyType();
   document.getElementById("nltCard").classList.toggle("hide", translation().source !== "nlt");
   document.body.classList.toggle("show-notes", !!settings.notes);
-  document.getElementById("pageFooter").textContent = translation().source === "nlt"
-    ? "New Living Translation, \u00a9 Tyndale House Foundation. Chapter text from api.nlt.to."
-    : "Chapter text from bible-api.com · WEB and KJV are public domain.";
+
   let bytes = 0;
   for (let i = 0; i < localStorage.length; i++){
     const k = localStorage.key(i);
