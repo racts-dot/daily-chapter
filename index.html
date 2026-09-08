@@ -184,7 +184,8 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
     <p class="tinyrow">
       <span class="when" id="whenLabel"></span>
       <button class="link" id="listenBtn">listen</button>
-      <button class="link" id="saveDayBtn">save this day</button>
+      <button class="link" id="saveDayBtn">save notes</button>
+      <button class="link" id="saveChapterBtn">save chapter</button>
       <button class="link" id="todayBtn">today</button>
       <button class="link" id="snagBtn">something's wrong</button>
       <button class="link hide" id="prevDay" aria-label="Previous day">&#8249;</button>
@@ -1521,9 +1522,10 @@ document.getElementById("playRate").addEventListener("input", function(ev){
 document.getElementById("saveDayBtn").addEventListener("click", function(){
   const info = chapterFor(viewDate);
   const name = (info.state === "ok" ? prettyRef(info.item.ref).replace(/[^\w]+/g, "-") : "day") +
-               "-" + viewDate + ".md";
+               "-notes-" + viewDate + ".md";
   download(name, dayAsMarkdown(), "text/markdown;charset=utf-8");
 });
+document.getElementById("saveChapterBtn").addEventListener("click", saveChapter);
 document.getElementById("setFont").addEventListener("change", function(ev){
   settings.font = ev.target.value; jset("settings", settings); applyType();
 });
@@ -1804,6 +1806,51 @@ function dayAsMarkdown(){
   return out;
 }
 
+/* ---------------------------- save the chapter --------------------------
+   Public domain text (WEB, KJV) can go into a file freely. The NLT cannot: a
+   file whose whole content is their text is not a quotation at any length. So
+   on the NLT this offers the same chapter in the World English Bible instead,
+   which is hers to keep, print or sell.
+------------------------------------------------------------------------- */
+async function chapterAsMarkdown(ref, trans){
+  const url = "https://bible-api.com/" + encodeURIComponent(bibleApiRef(ref)) + "?translation=" + trans;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  const data = await res.json();
+  if (!data.verses || !data.verses.length) throw new Error("no verses came back");
+  const name = data.translation_name || trans.toUpperCase();
+  let out = "# " + prettyRef(ref) + "\n\n_" + name + " · public domain_\n\n";
+  data.verses.forEach(function(v){
+    out += "**" + v.verse + "**  " + String(v.text).replace(/\s+/g, " ").trim() + "\n\n";
+  });
+  return out;
+}
+
+async function saveChapter(){
+  const info = chapterFor(viewDate);
+  if (info.state !== "ok"){ toast("No chapter to save", null, null); return; }
+  const ref = info.item.ref;
+
+  let trans = settings.translation;
+  if (translation().source === "nlt"){
+    const ok = window.confirm(
+      "The NLT cannot be saved into a file - Tyndale allow it to be shown, not " +
+      "copied out.\n\nSave " + prettyRef(ref) + " in the World English Bible instead? " +
+      "That one is public domain and yours to keep.");
+    if (!ok) return;
+    trans = "web";
+  }
+
+  toast("Fetching " + prettyRef(ref) + "\u2026", null, null);
+  try {
+    const text = await chapterAsMarkdown(ref, trans);
+    download(prettyRef(ref).replace(/[^\w]+/g, "-") + "-" + trans.toUpperCase() + ".md",
+             text, "text/markdown;charset=utf-8");
+  } catch (err) {
+    toast("Could not fetch it (" + err.message + ")", null, null);
+  }
+}
+
 /* -------------------------------- how it reads --------------------------- */
 function applyType(){
   document.body.classList.toggle("serif", settings.font === "serif");
@@ -1817,7 +1864,7 @@ function applyType(){
    the journal uses. Held on the device until they get through, so a note made
    with no signal is not lost.
 ------------------------------------------------------------------------- */
-const APP_VERSION = "v20";
+const APP_VERSION = "v21";
 
 function snags(){ return jget("snags", []); }
 
