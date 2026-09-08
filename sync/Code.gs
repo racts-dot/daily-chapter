@@ -14,13 +14,18 @@
  *   SHEET_ID       required
  *   NOTION_TOKEN   optional — leave it out and Sheets still works
  *   NOTION_DB      required only if NOTION_TOKEN is set
+ *   NOTION_SNAG_DB optional - the "what's wrong" list; without it snags still
+ *                  land in a Snags tab in the Sheet
  */
 
 var SHEET_NAME = 'Journal';
 var NOTION_VERSION = '2022-06-28';
 
+var SNAG_SHEET = 'Snags';
 var COLUMNS = ['date', 'reference', 'read', 'verse', 'summary', 'learnt',
                'apply', 'prayer', 'tags', 'versesChosen', 'updated'];
+var SNAG_COLUMNS = ['when', 'note', 'where', 'chapter', 'appVersion', 'device'];
+var SNAG_HEADINGS = ['When', "What's wrong", 'Where', 'Chapter', 'App version', 'Device'];
 var HEADINGS = ['Date', 'Reference', 'Read', 'Key verse', 'My summary',
                 'What I learnt', 'How I will use it', 'Prayer', 'Tags',
                 'Verses chosen', 'Last edited'];
@@ -34,7 +39,17 @@ function doPost(e) {
       var checks = [];
       checks.push(sheet() ? 'sheet reachable' : 'SHEET NOT REACHABLE');
       checks.push(notionToken() ? 'Notion key present' : 'Notion not set up (Sheets only)');
+      checks.push(prop('NOTION_SNAG_DB') ? 'snag list connected' : 'snags go to the Sheet only');
       return reply({ ok: true, wrote: checks.join(', ') });
+    }
+
+    if (body.kind === 'snag') {
+      var notes = body.snags || [];
+      for (var n = 0; n < notes.length; n++) {
+        appendSnag(notes[n]);
+        if (notionToken() && prop('NOTION_SNAG_DB')) snagToNotion(notes[n]);
+      }
+      return reply({ ok: true, wrote: notes.length });
     }
 
     var written = 0;
@@ -104,6 +119,46 @@ function writeToSheet(entry) {
   var values = [rowFor(entry)];
   if (row) tab.getRange(row, 1, 1, values[0].length).setValues(values);
   else tab.appendRow(values[0]);
+}
+
+/* -------------------------------- snags --------------------------------- */
+
+function snagTab() {
+  var book = SpreadsheetApp.openById(prop('SHEET_ID'));
+  var tab = book.getSheetByName(SNAG_SHEET);
+  if (!tab) {
+    tab = book.insertSheet(SNAG_SHEET);
+    tab.appendRow(SNAG_HEADINGS);
+    tab.setFrozenRows(1);
+  }
+  if (tab.getLastRow() === 0) {
+    tab.appendRow(SNAG_HEADINGS);
+    tab.setFrozenRows(1);
+  }
+  return tab;
+}
+
+/* Snags are appended, never keyed and overwritten: two different things can be
+   wrong on the same day, and the second must not replace the first. */
+function appendSnag(note) {
+  snagTab().appendRow(SNAG_COLUMNS.map(function (key) {
+    return note[key] === undefined || note[key] === null ? '' : String(note[key]);
+  }));
+}
+
+function snagToNotion(note) {
+  notionCall('pages', 'post', {
+    parent: { database_id: prop('NOTION_SNAG_DB') },
+    properties: {
+      "What's wrong": { title: [{ type: 'text', text: { content: String(note.note || '').slice(0, 1900) } }] },
+      'When': { date: { start: note.when } },
+      'Where': note.where ? { select: { name: note.where } } : { select: null },
+      'Status': { select: { name: 'New' } },
+      'Chapter': text(note.chapter),
+      'Device': text(note.device),
+      'App version': text(note.appVersion)
+    }
+  });
 }
 
 /* ------------------------------- notion --------------------------------- */

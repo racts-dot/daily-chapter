@@ -178,6 +178,7 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
       <button class="link" id="saveDayBtn">save this day</button>
       <button class="link" id="todayBtn">today</button>
       <button class="link" id="reloadText">reload</button>
+      <button class="link" id="snagBtn">something's wrong</button>
       <button class="link hide" id="prevDay" aria-label="Previous day">&#8249;</button>
       <button class="link hide" id="nextDay" aria-label="Next day">&#8250;</button>
     </p>
@@ -336,6 +337,26 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
   <button id="fabPrev" aria-label="Previous chapter" title="Previous chapter">&#8249;</button>
   <button id="fabMemo" class="wide" aria-label="Write a note">Note</button>
   <button id="fabNext" aria-label="Next chapter" title="Next chapter">&#8250;</button>
+</div>
+
+<div class="memo hide" id="snagPanel" role="dialog" aria-label="Report a problem">
+  <div class="memo-head">
+    <b>What is wrong?</b>
+    <button id="snagSend">Send</button>
+  </div>
+  <textarea id="snagText" placeholder="Plainly, in your words. &ldquo;The listen button stops halfway.&rdquo; &ldquo;Text too small on the journal.&rdquo; It goes to your Notion list."></textarea>
+  <div class="memo-foot">
+    <select id="snagWhere" style="width:auto;font-size:14px;padding:6px 8px">
+      <option value="Today">Today screen</option>
+      <option value="Chapter text">Chapter text</option>
+      <option value="Writing boxes">Writing boxes</option>
+      <option value="Journal">Journal</option>
+      <option value="Settings">Settings</option>
+      <option value="Sync">Sync</option>
+      <option value="Other">Other</option>
+    </select>
+    <button id="snagClose">Cancel</button>
+  </div>
 </div>
 
 <div class="memo hide" id="memoPanel" role="dialog" aria-label="Write a note">
@@ -1695,11 +1716,72 @@ function applyType(){
   if (label) label.textContent = "(" + (settings.size || 19) + " px)";
 }
 
+/* ------------------------------- snag list -------------------------------
+   Things wrong with the app, sent to a Notion list through the same postbox
+   the journal uses. Held on the device until they get through, so a note made
+   with no signal is not lost.
+------------------------------------------------------------------------- */
+const APP_VERSION = "v12";
+
+function snags(){ return jget("snags", []); }
+
+async function sendSnags(loud){
+  const waiting = snags().filter(function(s){ return !s.sent; });
+  if (!waiting.length) return;
+  if (!settings.syncUrl){
+    if (loud) toast("Kept here - no sync address set yet", null, null);
+    return;
+  }
+  try {
+    await postToSync({ app:"daily-chapter", version:1, kind:"snag", snags: waiting });
+    const all = snags();
+    all.forEach(function(s){ if (!s.sent) s.sent = new Date().toISOString(); });
+    jset("snags", all);
+    if (loud) toast("Sent to your Notion list", null, null);
+  } catch (err) {
+    if (loud) toast("Kept here - it will go when there is signal", null, null);
+  }
+}
+
+function snagOpen(open){
+  const panel = document.getElementById("snagPanel");
+  if (open){
+    document.getElementById("snagText").value = "";
+    panel.classList.remove("hide");
+    document.getElementById("snagText").focus({ preventScroll:true });
+  } else {
+    panel.classList.add("hide");
+  }
+  fabRefresh();
+}
+
+document.getElementById("snagBtn").addEventListener("click", function(){ snagOpen(true); });
+document.getElementById("snagClose").addEventListener("click", function(){ snagOpen(false); });
+document.getElementById("snagSend").addEventListener("click", function(){
+  const note = document.getElementById("snagText").value.trim();
+  if (!note){ toast("Write what is wrong first", null, null); return; }
+  const info = chapterFor(viewDate);
+  const all = snags();
+  all.push({
+    note: note,
+    where: document.getElementById("snagWhere").value,
+    when: todayStr(),
+    chapter: info.state === "ok" ? prettyRef(info.item.ref) : "",
+    device: navigator.userAgent.slice(0, 120),
+    appVersion: APP_VERSION,
+    sent: null
+  });
+  jset("snags", all);
+  snagOpen(false);
+  sendSnags(true);
+});
+
 /* ------------------------------ floating bar ----------------------------- */
 function fabRefresh(){
   const onToday = !document.getElementById("tab-today").classList.contains("hide");
   const memoOpen = !document.getElementById("memoPanel").classList.contains("hide");
-  document.getElementById("fab").classList.toggle("hide", !onToday || memoOpen);
+  const snagUp = !document.getElementById("snagPanel").classList.contains("hide");
+  document.getElementById("fab").classList.toggle("hide", !onToday || memoOpen || snagUp);
   if (!onToday) return;
 
   /* An arrow that leads nowhere is worse than no arrow, so say where it goes. */
@@ -1742,7 +1824,9 @@ document.getElementById("memoText").addEventListener("input", function(ev){
   field.dispatchEvent(new Event("input"));
 });
 document.addEventListener("keydown", function(ev){
-  if (ev.key === "Escape" && !document.getElementById("memoPanel").classList.contains("hide")) memoOpen(false);
+  if (ev.key !== "Escape") return;
+  if (!document.getElementById("memoPanel").classList.contains("hide")) memoOpen(false);
+  if (!document.getElementById("snagPanel").classList.contains("hide")) snagOpen(false);
 });
 
 window.addEventListener("beforeunload", function(){ saveEntry(false); });
@@ -1758,7 +1842,7 @@ fillSettings();
 fillJump(true);
 render();
 fabRefresh();
-if (settings.syncUrl) setTimeout(function(){ syncNow(false); }, 1500);
+if (settings.syncUrl) setTimeout(function(){ syncNow(false); sendSnags(false); }, 1500);
 </script>
 </body>
 </html>
