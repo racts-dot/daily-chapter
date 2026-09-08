@@ -54,6 +54,11 @@ textarea,input[type=text],input[type=date],select{
 textarea{min-height:96px;resize:vertical}
 textarea.tall{min-height:150px}
 textarea.taller{min-height:260px}
+.prompts{margin:0 0 8px;padding:10px 14px 10px 30px;list-style:disc;
+  background:rgba(122,92,46,.07);border:1px solid var(--line);border-radius:10px;
+  font-size:15px;color:var(--soft)}
+.prompts li{margin:0 0 3px}
+.prompts li:last-child{margin:0}
 .check{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:600;margin:4px 0 2px;cursor:pointer}
 .check input{width:22px;height:22px;accent-color:var(--accent)}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:16px}
@@ -167,7 +172,12 @@ body.show-notes .passage .tn-ref{font-weight:700;margin-right:6px}
     <textarea id="fVerse" placeholder="e.g. John 1:5 &mdash; The light shines in the darkness&hellip;"></textarea>
 
     <label for="fSummary">My summary of this chapter <span class="hint">(in my own words, as long as you like)</span></label>
-    <textarea id="fSummary" class="taller" placeholder="What happened, who it involves, and what it is getting at. Write it out properly &mdash; this box grows."></textarea>
+    <ul class="prompts">
+      <li>What happens in this chapter?</li>
+      <li>Who is it about, and what do they do?</li>
+      <li>What is it getting at?</li>
+    </ul>
+    <textarea id="fSummary" class="taller" placeholder="Answer those three in your own words. This box grows as you write."></textarea>
 
     <label for="fLearnt">What I learnt today <span class="hint">(understanding)</span></label>
     <textarea id="fLearnt" class="tall" placeholder="In my own words: what is this chapter actually saying?"></textarea>
