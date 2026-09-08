@@ -1741,7 +1741,7 @@ function applyType(){
    the journal uses. Held on the device until they get through, so a note made
    with no signal is not lost.
 ------------------------------------------------------------------------- */
-const APP_VERSION = "v18";
+const APP_VERSION = "v19";
 
 function snags(){ return jget("snags", []); }
 
@@ -1867,6 +1867,28 @@ fillSettings();
 fillJump(true);
 render();
 fabRefresh();
+/* Copying a 100-character address onto a phone is miserable, so the app can be
+   handed one in the link: ...?sync=<address>. It is never taken silently - a
+   link could otherwise point somebody's journal at a stranger's script - so it
+   asks first, and then cleans itself out of the address bar. */
+(function acceptSyncFromLink(){
+  let offered = null;
+  try { offered = new URLSearchParams(location.search).get("sync"); } catch (err) { return; }
+  if (!offered) return;
+  history.replaceState(null, "", location.pathname);
+  if (!/^https:\/\/script\.google\.com\//.test(offered)){
+    toast("That link carried an address I will not use", null, null);
+    return;
+  }
+  if (offered === settings.syncUrl){ toast("Already set up", null, null); return; }
+  const already = settings.syncUrl ? "\n\nThis REPLACES the address already set." : "";
+  if (!window.confirm("Use this as your sync address?\n\n" + offered + already)) return;
+  settings.syncUrl = offered;
+  jset("settings", settings);
+  fillSettings();
+  syncNow(true);
+})();
+
 if (settings.syncUrl) setTimeout(function(){ syncNow(false); sendSnags(false); }, 1500);
 </script>
 </body>
