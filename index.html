@@ -1,0 +1,1528 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Daily Chapter</title>
+<meta name="description" content="One Bible chapter a day, and a place to write what you learnt.">
+<meta name="theme-color" content="#f7f3ec">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#128214;</text></svg>">
+<style>
+:root{
+  --bg:#f7f3ec; --card:#fffdf9; --ink:#241f1a; --soft:#6b6157; --line:#e2d9cb;
+  --accent:#7a5c2e; --accent-ink:#fff; --good:#3f7d46; --warn:#9a4b2a;
+  --radius:14px; --pad:16px;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#17150f; --card:#211e17; --ink:#f0e9dd; --soft:#a89d8d; --line:#332e24;
+         --accent:#d8b46a; --accent-ink:#191509; --good:#7fc088; --warn:#e08a63; }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font:18px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:720px;margin:0 auto;padding:0 var(--pad) 96px}
+header{padding:18px 0 8px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+header h1{font-size:20px;margin:0;letter-spacing:.2px}
+header .streak{margin-left:auto;font-size:15px;color:var(--soft)}
+nav{display:flex;gap:6px;margin:10px 0 18px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:5px}
+nav button{flex:1;font:inherit;font-size:16px;padding:9px 6px;border:0;border-radius:10px;background:transparent;color:var(--soft);cursor:pointer}
+nav button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:var(--pad);margin:0 0 16px}
+.daynav{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.daynav button{font:inherit;background:transparent;border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:6px 12px;cursor:pointer;min-width:44px}
+.daynav .when{flex:1;text-align:center;font-size:15px;color:var(--soft)}
+.ref{font-size:32px;line-height:1.15;margin:2px 0 6px;font-weight:600}
+.sub{color:var(--soft);font-size:15px;margin:0 0 12px}
+.bar{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin:10px 0 4px}
+.bar i{display:block;height:100%;background:var(--accent)}
+.notice{font-size:15px;padding:10px 12px;border-radius:10px;background:rgba(122,92,46,.10);border:1px solid var(--line);margin:10px 0}
+.notice.warn{color:var(--warn)}
+.notice button{font:inherit;font-size:15px;background:transparent;border:0;color:var(--accent);text-decoration:underline;cursor:pointer;padding:0}
+.passage{font-size:19px;line-height:1.68}
+.passage .src{margin-top:14px;font-size:13px;color:var(--soft)}
+label{display:block;font-size:15px;font-weight:600;margin:16px 0 6px}
+label .hint{font-weight:400;color:var(--soft)}
+textarea,input[type=text],input[type=date],select{
+  width:100%;font:inherit;font-size:17px;padding:11px 12px;color:var(--ink);
+  background:var(--bg);border:1px solid var(--line);border-radius:10px;
+}
+textarea{min-height:96px;resize:vertical}
+textarea.tall{min-height:150px}
+textarea.taller{min-height:260px}
+.check{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:600;margin:4px 0 2px;cursor:pointer}
+.check input{width:22px;height:22px;accent-color:var(--accent)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:16px}
+.btn{font:inherit;font-size:16px;font-weight:600;padding:11px 18px;border:0;border-radius:11px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink);font-weight:500}
+.btn.danger{background:transparent;border:1px solid var(--warn);color:var(--warn);font-weight:500}
+.saved{font-size:15px;color:var(--good);opacity:0;transition:opacity .2s}
+.saved.on{opacity:1}
+.entry{border-top:1px solid var(--line);padding:14px 0}
+.entry:first-of-type{border-top:0}
+.entry h3{margin:0;font-size:18px}
+.entry .meta{color:var(--soft);font-size:14px;margin:2px 0 8px}
+.entry p{margin:0 0 6px;white-space:pre-wrap}
+.entry .field{font-size:16px}
+.entry .field b{font-size:14px;color:var(--soft);font-weight:600;display:block}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.tag{font-size:13px;background:rgba(122,92,46,.12);border:1px solid var(--line);border-radius:99px;padding:2px 10px;color:var(--soft)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin:0 0 4px}
+.stat b{display:block;font-size:26px;line-height:1.2}
+.stat span{font-size:14px;color:var(--soft)}
+.empty{color:var(--soft);font-size:16px}
+.hide{display:none !important}
+footer{color:var(--soft);font-size:13px;text-align:center;padding:8px 0 24px}
+/* --- markup that comes back from the NLT service ------------------------ */
+.passage p{margin:0 0 10px}
+.passage .vn{font-size:12px;font-weight:700;color:var(--accent);vertical-align:super;margin-right:5px}
+.passage .verses{cursor:pointer}
+.passage .verses p:hover{background:rgba(122,92,46,.07);border-radius:6px}
+.passage .vsel{text-decoration:underline;text-decoration-color:var(--accent);
+  text-decoration-thickness:2px;text-underline-offset:4px}
+.passage .vn-on{background:var(--accent);color:var(--accent-ink);border-radius:5px;
+  padding:1px 4px;vertical-align:baseline;font-size:13px}
+.passage .sc,.passage .subhead-sc,.passage .tn-sc{font-variant:small-caps}
+.passage .subhead{font-size:16px;font-weight:700;margin:20px 0 8px;color:var(--soft);letter-spacing:.3px}
+.passage .psa-title{font-style:italic;color:var(--soft);margin-bottom:12px}
+.passage .red{color:#a33b2a}
+@media (prefers-color-scheme: dark){ .passage .red{color:#e08a63} }
+.passage [class^="poet"],.passage [class*=" poet"],.passage [class^="ext-poet"]{margin:0 0 2px;padding-left:20px;text-indent:-20px}
+.passage [class^="poet2"],.passage [class^="ext-poet2"]{padding-left:38px}
+.passage [class^="poet3"]{padding-left:56px}
+.passage [class^="list"],.passage [class^="ext-"]{padding-left:20px}
+.passage table{width:100%;border-collapse:collapse;margin:0 0 10px}
+.passage td{padding:1px 10px 1px 0;vertical-align:top}
+.passage .a-tn,.passage .tn{display:none}
+body.show-notes .passage .a-tn{display:inline;color:var(--accent);font-weight:700}
+body.show-notes .passage .tn{display:block;font-size:14px;color:var(--soft);margin:4px 0 8px;padding-left:14px;border-left:2px solid var(--line)}
+body.show-notes .passage .tn-ref{font-weight:700;margin-right:6px}
+.summary,.names{background:rgba(122,92,46,.07);border:1px solid var(--line);
+  border-radius:12px;padding:12px 14px;margin:0 0 18px;font-size:16px;line-height:1.5}
+.names{margin:22px 0 0}
+.summary b,.names b{display:block;font-size:13px;letter-spacing:.4px;text-transform:uppercase;
+  color:var(--soft);margin-bottom:6px}
+.summary ul{margin:0;padding-left:20px}
+.summary li{margin:0 0 3px}
+.names p{margin:0 0 6px}
+.names .where{display:inline-block;min-width:44px;font-weight:700;color:var(--accent);margin-right:6px}
+.names .caveat{margin-top:8px;font-size:13px;color:var(--soft)}
+.copyright{margin-top:16px;font-size:12px;line-height:1.5;color:var(--soft)}
+.toast{position:fixed;left:50%;bottom:20px;transform:translate(-50%,14px);z-index:20;
+  display:flex;align-items:center;gap:14px;max-width:calc(100% - 32px);
+  background:var(--accent);color:var(--accent-ink);border-radius:12px;
+  padding:11px 16px;font-size:15px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.22);
+  opacity:0;pointer-events:none;transition:opacity .18s,transform .18s}
+.toast.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.toast span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.toast button{font:inherit;font-size:15px;font-weight:700;background:transparent;border:0;
+  color:var(--accent-ink);text-decoration:underline;cursor:pointer;padding:0;white-space:nowrap}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Daily Chapter</h1>
+  <div class="streak" id="streak"></div>
+</header>
+
+<nav role="tablist">
+  <button role="tab" id="tab-btn-today" aria-selected="true" data-tab="today">Today</button>
+  <button role="tab" id="tab-btn-journal" aria-selected="false" data-tab="journal">Journal</button>
+  <button role="tab" id="tab-btn-settings" aria-selected="false" data-tab="settings">Settings</button>
+</nav>
+
+<!-- ============================= TODAY ============================= -->
+<section id="tab-today">
+  <div class="card">
+    <div class="daynav">
+      <button id="prevDay" aria-label="Previous day">&#8249;</button>
+      <div class="when" id="whenLabel"></div>
+      <button id="nextDay" aria-label="Next day">&#8250;</button>
+    </div>
+    <div class="ref" id="refLabel">&hellip;</div>
+    <p class="sub" id="planLabel"></p>
+    <div class="bar"><i id="progressBar" style="width:0%"></i></div>
+    <p class="sub" id="progressLabel"></p>
+    <div id="behindNotice" class="notice hide"></div>
+    <div class="row">
+      <button class="btn ghost" id="todayBtn">Back to today</button>
+      <button class="btn ghost" id="reloadText">Reload the chapter</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="passage" id="passage"><p class="empty">Loading the chapter&hellip;</p></div>
+  </div>
+
+  <div class="card">
+    <label class="check"><input type="checkbox" id="fDone"> I read it today</label>
+
+    <label for="fVerse">The verse that stood out <span class="hint">(tap any verse above to drop it in)</span></label>
+    <textarea id="fVerse" placeholder="e.g. John 1:5 &mdash; The light shines in the darkness&hellip;"></textarea>
+
+    <label for="fSummary">My summary of this chapter <span class="hint">(in my own words, as long as you like)</span></label>
+    <textarea id="fSummary" class="taller" placeholder="What happened, who it involves, and what it is getting at. Write it out properly &mdash; this box grows."></textarea>
+
+    <label for="fLearnt">What I learnt today <span class="hint">(understanding)</span></label>
+    <textarea id="fLearnt" class="tall" placeholder="In my own words: what is this chapter actually saying?"></textarea>
+
+    <label for="fApply">How I will use it <span class="hint">(one small thing)</span></label>
+    <textarea id="fApply" placeholder="e.g. Ring Mum before Friday."></textarea>
+
+    <label for="fPrayer">Prayer / question I am sitting with</label>
+    <textarea id="fPrayer" placeholder="Anything you want to come back to."></textarea>
+
+    <label for="fTags">Tags <span class="hint">(comma separated, for finding it later)</span></label>
+    <input type="text" id="fTags" placeholder="patience, work, family">
+
+    <div class="row">
+      <button class="btn" id="saveBtn">Save today</button>
+      <button class="btn ghost" id="copyBtn">Copy this entry</button>
+      <span class="saved" id="savedFlag">Saved</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ JOURNAL ============================ -->
+<section id="tab-journal" class="hide">
+  <div class="card">
+    <div class="stats">
+      <div class="stat"><b id="sEntries">0</b><span>entries written</span></div>
+      <div class="stat"><b id="sRead">0</b><span>chapters read</span></div>
+      <div class="stat"><b id="sStreak">0</b><span>day streak</span></div>
+      <div class="stat"><b id="sBest">0</b><span>best streak</span></div>
+    </div>
+  </div>
+  <div class="card">
+    <label for="search">Search everything you have written</label>
+    <input type="text" id="search" placeholder="a word, a book name, a tag&hellip;">
+    <div class="row">
+      <button class="btn ghost" id="expMd">Download as Markdown</button>
+      <button class="btn ghost" id="expCsv">Download as CSV</button>
+      <button class="btn ghost" id="copyAll">Copy all as text</button>
+    </div>
+  </div>
+  <div class="card" id="entryList"></div>
+</section>
+
+<!-- ============================ SETTINGS =========================== -->
+<section id="tab-settings" class="hide">
+  <div class="card">
+    <h3 style="margin:0 0 6px;font-size:17px">Where you are</h3>
+    <p class="sub" id="whereNow"></p>
+    <div class="row" style="margin-top:0;gap:8px;flex-wrap:nowrap">
+      <select id="jumpBook" style="flex:3" aria-label="Book"></select>
+      <select id="jumpChapter" style="flex:1" aria-label="Chapter"></select>
+    </div>
+    <div class="row">
+      <button class="btn" id="jumpGo">Put me here today</button>
+    </div>
+    <p class="sub">Use this whenever you like &mdash; today becomes that chapter and it carries
+    on from there. Nothing you have written is touched.</p>
+  </div>
+
+  <div class="card">
+    <label for="setPlan">Reading plan</label>
+    <select id="setPlan"></select>
+
+    <label for="setStart">Day 1 of the plan</label>
+    <input type="date" id="setStart">
+    <p class="sub">Today's chapter is worked out from this date. Change it and today's chapter changes.</p>
+
+    <label for="setTrans">Translation</label>
+    <select id="setTrans"></select>
+
+    <label class="check" style="margin-top:16px"><input type="checkbox" id="setNotes"> Show the translators' footnotes</label>
+
+    <div class="row">
+      <button class="btn ghost" id="startToday">Start the plan again from today</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:0 0 6px;font-size:17px">Automatic backup</h3>
+    <p class="sub" id="syncState">Not set up. Your writing is on this device only.</p>
+    <label for="setSync">Sync address <span class="hint">(paste the one I give you)</span></label>
+    <input type="text" id="setSync" placeholder="https://script.google.com/macros/s/&hellip;/exec"
+           autocomplete="off" spellcheck="false">
+    <div class="row">
+      <button class="btn ghost" id="syncNow">Send everything now</button>
+      <button class="btn ghost" id="syncTest">Test the address</button>
+    </div>
+    <p class="sub">Every day you write is sent to your Google Sheet and your Notion, as
+    well as staying on this device. Sending the same day twice is harmless &mdash; it
+    overwrites rather than doubling up. With no signal it waits and tries later.</p>
+  </div>
+
+  <div class="card" id="nltCard">
+    <h3 style="margin:0 0 6px;font-size:17px">NLT key <span class="hint" style="font-weight:400">&mdash; you almost certainly do not need one</span></h3>
+    <p class="sub">The NLT works with no key at all, up to 500 chapters a day. That is
+    about 500 times what you will use. Only paste a key here if Tyndale gives you one.</p>
+    <label for="setKey">Tyndale API key (optional)</label>
+    <input type="text" id="setKey" placeholder="leave empty" autocomplete="off" spellcheck="false">
+    <p class="sub">Free keys: <b>api.nlt.to</b> &rarr; Sign Up. Personal reading only &mdash;
+    selling anything that contains NLT text needs a licence from Tyndale.</p>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:0 0 6px;font-size:17px">Your writing is stored on this device only</h3>
+    <p class="sub">Nothing is uploaded anywhere. Clearing your browser data deletes it &mdash; so back it up now and then.</p>
+    <div class="row">
+      <button class="btn" id="expJson">Back up (download file)</button>
+      <button class="btn ghost" id="impBtn">Restore from a backup file</button>
+      <input type="file" id="impFile" accept="application/json,.json" class="hide">
+    </div>
+    <div class="row">
+      <button class="btn ghost" id="clearCache">Clear saved chapter text</button>
+      <button class="btn danger" id="wipe">Delete everything</button>
+    </div>
+    <p class="sub" id="storeInfo"></p>
+  </div>
+</section>
+
+<footer id="pageFooter"></footer>
+</div>
+
+<script>
+"use strict";
+
+/* ---------------------------------------------------------------------------
+   DATA. The checker (check_bible_app.py) reads the two blocks below straight
+   out of this file, so there is one copy of this table and no second one to
+   drift out of date. Keep them valid JSON.
+--------------------------------------------------------------------------- */
+
+/* BOOKS_JSON_START */
+const BOOKS = [
+{"name":"Genesis","chapters":50,"testament":"OT"},
+{"name":"Exodus","chapters":40,"testament":"OT"},
+{"name":"Leviticus","chapters":27,"testament":"OT"},
+{"name":"Numbers","chapters":36,"testament":"OT"},
+{"name":"Deuteronomy","chapters":34,"testament":"OT"},
+{"name":"Joshua","chapters":24,"testament":"OT"},
+{"name":"Judges","chapters":21,"testament":"OT"},
+{"name":"Ruth","chapters":4,"testament":"OT"},
+{"name":"1 Samuel","chapters":31,"testament":"OT"},
+{"name":"2 Samuel","chapters":24,"testament":"OT"},
+{"name":"1 Kings","chapters":22,"testament":"OT"},
+{"name":"2 Kings","chapters":25,"testament":"OT"},
+{"name":"1 Chronicles","chapters":29,"testament":"OT"},
+{"name":"2 Chronicles","chapters":36,"testament":"OT"},
+{"name":"Ezra","chapters":10,"testament":"OT"},
+{"name":"Nehemiah","chapters":13,"testament":"OT"},
+{"name":"Esther","chapters":10,"testament":"OT"},
+{"name":"Job","chapters":42,"testament":"OT"},
+{"name":"Psalms","chapters":150,"testament":"OT"},
+{"name":"Proverbs","chapters":31,"testament":"OT"},
+{"name":"Ecclesiastes","chapters":12,"testament":"OT"},
+{"name":"Song of Solomon","chapters":8,"testament":"OT"},
+{"name":"Isaiah","chapters":66,"testament":"OT"},
+{"name":"Jeremiah","chapters":52,"testament":"OT"},
+{"name":"Lamentations","chapters":5,"testament":"OT"},
+{"name":"Ezekiel","chapters":48,"testament":"OT"},
+{"name":"Daniel","chapters":12,"testament":"OT"},
+{"name":"Hosea","chapters":14,"testament":"OT"},
+{"name":"Joel","chapters":3,"testament":"OT"},
+{"name":"Amos","chapters":9,"testament":"OT"},
+{"name":"Obadiah","chapters":1,"testament":"OT"},
+{"name":"Jonah","chapters":4,"testament":"OT"},
+{"name":"Micah","chapters":7,"testament":"OT"},
+{"name":"Nahum","chapters":3,"testament":"OT"},
+{"name":"Habakkuk","chapters":3,"testament":"OT"},
+{"name":"Zephaniah","chapters":3,"testament":"OT"},
+{"name":"Haggai","chapters":2,"testament":"OT"},
+{"name":"Zechariah","chapters":14,"testament":"OT"},
+{"name":"Malachi","chapters":4,"testament":"OT"},
+{"name":"Matthew","chapters":28,"testament":"NT"},
+{"name":"Mark","chapters":16,"testament":"NT"},
+{"name":"Luke","chapters":24,"testament":"NT"},
+{"name":"John","chapters":21,"testament":"NT"},
+{"name":"Acts","chapters":28,"testament":"NT"},
+{"name":"Romans","chapters":16,"testament":"NT"},
+{"name":"1 Corinthians","chapters":16,"testament":"NT"},
+{"name":"2 Corinthians","chapters":13,"testament":"NT"},
+{"name":"Galatians","chapters":6,"testament":"NT"},
+{"name":"Ephesians","chapters":6,"testament":"NT"},
+{"name":"Philippians","chapters":4,"testament":"NT"},
+{"name":"Colossians","chapters":4,"testament":"NT"},
+{"name":"1 Thessalonians","chapters":5,"testament":"NT"},
+{"name":"2 Thessalonians","chapters":3,"testament":"NT"},
+{"name":"1 Timothy","chapters":6,"testament":"NT"},
+{"name":"2 Timothy","chapters":4,"testament":"NT"},
+{"name":"Titus","chapters":3,"testament":"NT"},
+{"name":"Philemon","chapters":1,"testament":"NT"},
+{"name":"Hebrews","chapters":13,"testament":"NT"},
+{"name":"James","chapters":5,"testament":"NT"},
+{"name":"1 Peter","chapters":5,"testament":"NT"},
+{"name":"2 Peter","chapters":3,"testament":"NT"},
+{"name":"1 John","chapters":5,"testament":"NT"},
+{"name":"2 John","chapters":1,"testament":"NT"},
+{"name":"3 John","chapters":1,"testament":"NT"},
+{"name":"Jude","chapters":1,"testament":"NT"},
+{"name":"Revelation","chapters":22,"testament":"NT"}
+];
+/* BOOKS_JSON_END */
+
+/* PLANS_JSON_START */
+const PLANS = [
+{"id":"nt","name":"New Testament, one chapter a day","ranges":[["Matthew","Revelation"]]},
+{"id":"gospels","name":"The four Gospels","ranges":[["Matthew","John"]]},
+{"id":"psalms","name":"Psalms","ranges":[["Psalms","Psalms"]]},
+{"id":"psalms_proverbs","name":"Psalms and Proverbs","ranges":[["Psalms","Proverbs"]]},
+{"id":"nt_psalms","name":"New Testament, then Psalms","ranges":[["Matthew","Revelation"],["Psalms","Psalms"]]},
+{"id":"wisdom","name":"The wisdom books (Job to Song of Solomon)","ranges":[["Job","Song of Solomon"]]},
+{"id":"ot","name":"Old Testament, one chapter a day","ranges":[["Genesis","Malachi"]]},
+{"id":"whole","name":"Whole Bible, one chapter a day","ranges":[["Genesis","Revelation"]]}
+];
+/* PLANS_JSON_END */
+
+/* Books with a single chapter: bible-api.com reads "Jude 1" as verse 1, so
+   these must be asked for as a verse range. Counts probed from the API. */
+/* ONECHAP_JSON_START */
+const ONE_CHAPTER_VERSES = {"Obadiah":21,"Philemon":25,"2 John":13,"3 John":14,"Jude":25};
+/* ONECHAP_JSON_END */
+
+/* Which translations are on offer, and where each one comes from. */
+/* TRANSLATIONS_JSON_START */
+const TRANSLATIONS = [
+{"id":"NLT","source":"nlt","label":"New Living Translation (NLT)","name":"New Living Translation"},
+{"id":"NLTUK","source":"nlt","label":"New Living Translation - UK and Australian spelling","name":"New Living Translation (UK)"},
+{"id":"web","source":"bibleapi","label":"World English Bible - public domain","name":"World English Bible"},
+{"id":"kjv","source":"bibleapi","label":"King James Version - public domain","name":"King James Version"}
+];
+/* TRANSLATIONS_JSON_END */
+
+/* The NLT service names one book differently from the table above. */
+/* NLTBOOKS_JSON_START */
+const NLT_BOOK_NAMES = {"Song of Solomon":"Song of Songs"};
+/* NLTBOOKS_JSON_END */
+
+/* Tyndale allow 50 verses per request without a key, and 500 requests a day.
+   Long chapters are therefore asked for in 50-verse pieces. */
+const NLT_CHUNK = 50;
+
+const NLT_COPYRIGHT = "Scripture quotations are taken from the Holy Bible, " +
+  "New Living Translation, copyright \u00a9 1996, 2004, 2015 by Tyndale House Foundation. " +
+  "Used by permission of Tyndale House Publishers, Carol Stream, Illinois 60188. All rights reserved.";
+
+/* ------------------------------- storage -------------------------------- */
+const NS = "bibleDaily.v1.";
+function jget(key, fallback){
+  try { const raw = localStorage.getItem(NS+key); return raw === null ? fallback : JSON.parse(raw); }
+  catch (e) { return fallback; }
+}
+function jset(key, value){
+  try { localStorage.setItem(NS+key, JSON.stringify(value)); return true; }
+  catch (e) { return false; }
+}
+
+const DEFAULT_SETTINGS = { plan:"nt", start:null, pointedAt:null, translation:"NLT",
+                           nltKey:"", notes:false, syncUrl:"", lastSync:null };
+let settings = Object.assign({}, DEFAULT_SETTINGS, jget("settings", {}));
+let entries  = jget("entries", {});
+
+/* The app shipped with a public-domain default before the NLT was wired up.
+   Move anyone still on that default across, once, without touching a choice
+   the reader has actually made. */
+if (!settings.nltMigrated){
+  if (settings.translation === "web") settings.translation = "NLT";
+  settings.nltMigrated = true;
+  jset("settings", settings);
+}
+if (!TRANSLATIONS.some(function(t){ return t.id === settings.translation; })){
+  settings.translation = DEFAULT_SETTINGS.translation;
+  jset("settings", settings);
+}
+function translation(){
+  return TRANSLATIONS.find(function(t){ return t.id === settings.translation; }) || TRANSLATIONS[0];
+}
+
+/* ------------------------------- dates ---------------------------------- */
+function todayStr(){
+  const d = new Date();
+  return [d.getFullYear(), String(d.getMonth()+1).padStart(2,"0"), String(d.getDate()).padStart(2,"0")].join("-");
+}
+function toDate(s){ const p = s.split("-").map(Number); return new Date(p[0], p[1]-1, p[2]); }
+function shift(s, days){ const d = toDate(s); d.setDate(d.getDate()+days); 
+  return [d.getFullYear(), String(d.getMonth()+1).padStart(2,"0"), String(d.getDate()).padStart(2,"0")].join("-"); }
+function daysBetween(a, b){ return Math.round((toDate(b) - toDate(a)) / 86400000); }
+function prettyDate(s){
+  const d = toDate(s);
+  return d.toLocaleDateString(undefined, {weekday:"long", day:"numeric", month:"long", year:"numeric"});
+}
+
+if (!settings.start) { settings.start = todayStr(); jset("settings", settings); }
+
+/* -------------------------------- plans --------------------------------- */
+function bookIndex(name){ return BOOKS.findIndex(b => b.name === name); }
+
+/* "Psalms 23" is how the table lists it; "Psalm 23" is how people say it.
+   Display only - what an entry stores stays exactly as the table has it. */
+function prettyRef(ref){ return String(ref || "").replace(/^Psalms /, "Psalm "); }
+
+function buildPlan(planId){
+  const plan = PLANS.find(p => p.id === planId) || PLANS[0];
+  const out = [];
+  plan.ranges.forEach(function(range){
+    const from = bookIndex(range[0]), to = bookIndex(range[1]);
+    for (let i = from; i <= to; i++){
+      for (let c = 1; c <= BOOKS[i].chapters; c++){
+        out.push({ book: BOOKS[i].name, chapter: c, ref: BOOKS[i].name + " " + c });
+      }
+    }
+  });
+  return { id: plan.id, name: plan.name, chapters: out };
+}
+
+let plan = buildPlan(settings.plan);
+let viewDate = todayStr();
+
+function chapterFor(dateStr){
+  const idx = daysBetween(settings.start, dateStr);
+  if (idx < 0) return { state:"before", index: idx };
+  if (idx >= plan.chapters.length) return { state:"after", index: idx };
+  return { state:"ok", index: idx, item: plan.chapters[idx] };
+}
+
+/* ------------------------------ chapter text ----------------------------
+   Two sources, one shape out the other end:
+     bible-api.com  gives JSON, one object per verse (WEB, KJV)
+     api.nlt.to     gives HTML with the poetry, headings and footnotes intact
+   Both end up as { ref, translation, name, kind, html, copyright }.
+------------------------------------------------------------------------- */
+function textKey(ref){ return "text." + settings.translation + "." + ref; }
+
+/* --- only these tags and only the class attribute survive from the NLT --- */
+const ALLOWED_TAGS = {P:1,SPAN:1,DIV:1,H3:1,H4:1,EM:1,I:1,B:1,STRONG:1,BR:1,TABLE:1,TBODY:1,TR:1,TD:1};
+const UNWRAP_TAGS  = {SECTION:1,"VERSE_EXPORT":1,A:1,BODY:1,HTML:1};
+const DROP_TAGS    = {SCRIPT:1,STYLE:1,LINK:1,META:1,IFRAME:1,OBJECT:1,EMBED:1,FORM:1,INPUT:1,HEAD:1,TITLE:1};
+const DROP_CLASSES = {"bk_ch_vs_header":1,"chapter-number":1,"section-head":1};
+
+function sanitise(node, out, doc){
+  Array.prototype.forEach.call(node.childNodes, function(child){
+    if (child.nodeType === 3){ out.appendChild(doc.createTextNode(child.nodeValue)); return; }
+    if (child.nodeType !== 1) return;
+    const tag = child.tagName.toUpperCase();
+    if (DROP_TAGS[tag]) return;
+    const cls = (child.getAttribute("class") || "").trim();
+    if (cls.split(/\s+/).some(function(c){ return DROP_CLASSES[c]; })) return;
+    if (tag === "A" && cls.indexOf("a-tn") !== -1){
+      const marker = doc.createElement("span");
+      marker.setAttribute("class", cls);
+      sanitise(child, marker, doc);
+      out.appendChild(marker);
+      return;
+    }
+    if (UNWRAP_TAGS[tag] || !ALLOWED_TAGS[tag]){ sanitise(child, out, doc); return; }
+    const clean = doc.createElement(tag.toLowerCase());
+    if (cls) clean.setAttribute("class", cls);
+    sanitise(child, clean, doc);
+    out.appendChild(clean);
+  });
+  return out;
+}
+
+function nltRef(ref, from, to){
+  const book = ref.replace(/\s+\d+$/, "");
+  const chapter = ref.slice(book.length).trim();
+  return (NLT_BOOK_NAMES[book] || book) + "." + chapter + "." + from + "-" + to;
+}
+
+async function fetchFromNlt(ref){
+  const doc = document.implementation.createHTMLDocument("");
+  const holder = doc.createElement("div");
+  let from = 1, lastSeen = 0, got = 0;
+
+  for (let round = 0; round < 6; round++){
+    const to = from + NLT_CHUNK - 1;
+    const url = "https://api.nlt.to/api/passages?ref=" + encodeURIComponent(nltRef(ref, from, to)) +
+                "&version=" + encodeURIComponent(settings.translation) +
+                "&key=" + encodeURIComponent(settings.nltKey || "TEST");
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const parsed = new DOMParser().parseFromString(await res.text(), "text/html");
+    const body = parsed.querySelector("#bibletext");
+    if (!body) throw new Error("unexpected reply from the NLT service");
+
+    const numbers = Array.prototype.map.call(body.querySelectorAll(".vn"), function(el){
+      return parseInt(el.textContent, 10);
+    }).filter(function(n){ return !isNaN(n); });
+    const highest = numbers.length ? Math.max.apply(null, numbers) : 0;
+    if (highest <= lastSeen) break;          /* the chapter ran out; nothing new */
+
+    sanitise(body, holder, doc);
+    got += numbers.length;
+    if (highest < to) break;                 /* the chapter ended inside this piece */
+    lastSeen = highest;
+    from = to + 1;
+  }
+  if (!got) throw new Error("no verses came back");
+  return { ref:ref, translation:settings.translation, name:translation().name,
+           kind:"html", html:holder.innerHTML, copyright:NLT_COPYRIGHT };
+}
+
+function bibleApiRef(ref){
+  const book = ref.replace(/\s+\d+$/, "");
+  /* bible-api reads "Jude 1" as verse 1, so one-chapter books need a range. */
+  if (ONE_CHAPTER_VERSES[book]) return book + " 1:1-" + ONE_CHAPTER_VERSES[book];
+  return ref;
+}
+
+async function fetchFromBibleApi(ref){
+  const url = "https://bible-api.com/" + encodeURIComponent(bibleApiRef(ref)) +
+              "?translation=" + settings.translation;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  const data = await res.json();
+  if (!data.verses || !data.verses.length) throw new Error("no verses came back");
+  const doc = document.implementation.createHTMLDocument("");
+  const holder = doc.createElement("div");
+  data.verses.forEach(function(v){
+    const p = doc.createElement("p");
+    const n = doc.createElement("span");
+    n.setAttribute("class", "vn");
+    n.textContent = v.verse;
+    p.appendChild(n);
+    p.appendChild(doc.createTextNode(String(v.text).replace(/\s+/g, " ").trim()));
+    holder.appendChild(p);
+  });
+  return { ref:ref, translation:settings.translation, name:(data.translation_name || translation().name),
+           kind:"html", html:holder.innerHTML, copyright:"" };
+}
+
+async function fetchChapter(ref, force){
+  if (!force){
+    const cached = jget(textKey(ref), null);
+    if (cached && cached.html) return cached;
+  }
+  const payload = translation().source === "nlt" ? await fetchFromNlt(ref) : await fetchFromBibleApi(ref);
+  if (!jset(textKey(ref), payload)) { pruneTextCache(); jset(textKey(ref), payload); }
+  return payload;
+}
+
+function pruneTextCache(){
+  const keys = [];
+  for (let i = 0; i < localStorage.length; i++){
+    const k = localStorage.key(i);
+    if (k && k.indexOf(NS + "text.") === 0) keys.push(k);
+  }
+  keys.slice(0, Math.ceil(keys.length / 2)).forEach(function(k){ localStorage.removeItem(k); });
+}
+
+/* Tapping. A prose paragraph can hold four verses and a psalm can spread one
+   verse over six lines, so the verse is decided by the nearest verse number
+   before whatever was tapped, and its text is read from there to the next
+   verse number. That works for both shapes without guessing. */
+function markBefore(marks, node){
+  let found = -1;
+  for (let i = 0; i < marks.length; i++){
+    if (marks[i] === node || marks[i].contains(node)) { found = i; continue; }
+    const where = marks[i].compareDocumentPosition(node);
+    if (where & Node.DOCUMENT_POSITION_FOLLOWING) found = i; else break;
+  }
+  return found;
+}
+
+function verseText(scope, marks, i){
+  const range = document.createRange();
+  range.setStartAfter(marks[i]);
+  if (i + 1 < marks.length) range.setEndBefore(marks[i + 1]);
+  else range.setEnd(scope, scope.childNodes.length);
+  const box = document.createElement("div");
+  box.appendChild(range.cloneContents());
+  Array.prototype.forEach.call(box.querySelectorAll(".tn, .a-tn, .vn"), function(el){ el.remove(); });
+  return box.textContent.replace(/\s+/g, " ").trim();
+}
+
+/* Which verses are chosen on the day being looked at. Kept with the entry, so
+   the underlines are still there when you come back to that day. */
+let chosen = [];
+let lastQuote = "";
+
+/* Underline every chosen verse. Verses are not elements - a prose paragraph
+   holds several, and one line of a psalm can span several paragraphs - so the
+   text nodes are wrapped one at a time, which leaves the layout untouched. */
+function applySelection(scope, picks){
+  Array.prototype.forEach.call(scope.querySelectorAll(".vsel"), function(el){
+    const parent = el.parentNode;
+    while (el.firstChild) parent.insertBefore(el.firstChild, el);
+    parent.removeChild(el);
+  });
+  scope.normalize();
+
+  const want = {};
+  picks.forEach(function(n){ want[n] = true; });
+
+  const walker = document.createTreeWalker(scope, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, null);
+  const targets = [];
+  let current = null;
+  while (walker.nextNode()){
+    const node = walker.currentNode;
+    if (node.nodeType === 1){
+      if (node.classList && node.classList.contains("vn")){
+        current = parseInt(node.textContent, 10);
+        node.classList.toggle("vn-on", !!want[current]);
+      }
+      continue;
+    }
+    if (current === null || !want[current]) continue;
+    if (!node.nodeValue.trim()) continue;
+    if (node.parentNode.closest(".tn, .a-tn, .vn")) continue;
+    targets.push(node);
+  }
+  targets.forEach(function(node){
+    const span = document.createElement("span");
+    span.className = "vsel";
+    node.parentNode.insertBefore(span, node);
+    span.appendChild(node);
+  });
+}
+
+/* Chosen verses, in order, with runs joined up: 5, 6, 7 becomes "5-7". */
+function buildQuote(scope, marks, picks, ref){
+  if (!picks.length) return "";
+  const byNumber = {};
+  marks.forEach(function(m, i){ byNumber[parseInt(m.textContent, 10)] = i; });
+
+  const runs = [];
+  picks.slice().sort(function(a, b){ return a - b; }).forEach(function(n){
+    const last = runs[runs.length - 1];
+    if (last && n === last[last.length - 1] + 1) last.push(n); else runs.push([n]);
+  });
+
+  return runs.map(function(run){
+    const text = run.map(function(n){ return verseText(scope, marks, byNumber[n]); })
+                    .filter(Boolean).join(" ");
+    const label = run.length > 1 ? run[0] + "-" + run[run.length - 1] : String(run[0]);
+    return prettyRef(ref) + ":" + label + " — " + text;
+  }).join("\n\n");
+}
+
+/* Rewrite the quote at the top of the box, keeping anything typed underneath. */
+function writeQuote(quote){
+  const field = document.getElementById("fVerse");
+  const current = field.value;
+  let tail = "";
+  if (lastQuote && current.indexOf(lastQuote) === 0) tail = current.slice(lastQuote.length);
+  else if (current.trim()) tail = "\n\n" + current;
+  field.value = quote ? quote + tail : tail.replace(/^\s+/, "");
+  lastQuote = quote;
+  field.dispatchEvent(new Event("input"));
+}
+
+function wireVerseTaps(scope, ref){
+  const marks = Array.prototype.slice.call(scope.querySelectorAll(".vn"));
+  if (!marks.length) return;
+  applySelection(scope, chosen);
+
+  scope.addEventListener("click", function(ev){
+    const i = markBefore(marks, ev.target);
+    if (i < 0) return;
+    const number = parseInt(marks[i].textContent, 10);
+    if (isNaN(number)) return;
+
+    const at = chosen.indexOf(number);
+    if (at === -1) chosen.push(number); else chosen.splice(at, 1);
+
+    applySelection(scope, chosen);
+    writeQuote(buildQuote(scope, marks, chosen, ref));
+
+    /* Deliberately no scrolling. Jumping to the box loses your place in the
+       chapter and hides the summary at the top; the toast offers the trip
+       down as a choice instead. */
+    const n = chosen.length;
+    const field = document.getElementById("fVerse");
+    if (!n) toast("Verse removed", null, null);
+    else toast(n === 1 ? "Verse kept - tap more to add them" : n + " verses kept",
+      "Write about it", function(){
+        field.scrollIntoView({ behavior:"smooth", block:"center" });
+        field.focus({ preventScroll:true });
+      });
+  });
+}
+
+/* A quiet confirmation that does not move the page. */
+let toastTimer = null;
+function toast(message, actionLabel, action){
+  let box = document.getElementById("toast");
+  if (!box){
+    box = document.createElement("div");
+    box.id = "toast";
+    box.className = "toast";
+    document.body.appendChild(box);
+  }
+  box.innerHTML = "";
+  const text = document.createElement("span");
+  text.textContent = message;
+  box.appendChild(text);
+  if (actionLabel && action){
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = actionLabel;
+    btn.addEventListener("click", function(){ box.classList.remove("on"); action(); });
+    box.appendChild(btn);
+  }
+  box.classList.add("on");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ box.classList.remove("on"); }, 4000);
+}
+
+/* What the chapter is about, in the translators' own section headings. Not a
+   summary anybody here wrote - these are the headings printed in the NLT. */
+function summaryOf(verses){
+  const heads = [];
+  Array.prototype.forEach.call(verses.querySelectorAll(".subhead"), function(el){
+    const text = el.textContent.replace(/\s+/g, " ").trim();
+    if (text && heads.indexOf(text) === -1) heads.push(text);
+  });
+  if (!heads.length) return null;
+  const card = document.createElement("div");
+  card.className = "summary";
+  const title = document.createElement("b");
+  title.textContent = "In this chapter — the NLT's own headings, to start you off";
+  card.appendChild(title);
+  const list = document.createElement("ul");
+  heads.forEach(function(h){
+    const li = document.createElement("li");
+    li.textContent = h;
+    list.appendChild(li);
+  });
+  card.appendChild(list);
+  return card;
+}
+
+/* Names the NLT itself explains, gathered from its footnotes. Only the ones
+   Tyndale explain - no dictionary of guesses is bolted on here. */
+function namesIn(verses){
+  const found = [];
+  Array.prototype.forEach.call(verses.querySelectorAll(".tn"), function(el){
+    const refEl = el.querySelector(".tn-ref");
+    const where = refEl ? refEl.textContent.trim() : "";
+    let text = el.textContent.replace(/\s+/g, " ").trim();
+    if (where && text.indexOf(where) === 0) text = text.slice(where.length).trim();
+    if (!/\bmeans\b/.test(text)) return;
+    if (found.some(function(f){ return f.text === text; })) return;
+    found.push({ where: where, text: text });
+  });
+  if (!found.length) return null;
+
+  const card = document.createElement("div");
+  card.className = "names";
+  const title = document.createElement("b");
+  title.textContent = "What the names mean";
+  card.appendChild(title);
+  found.forEach(function(f){
+    const line = document.createElement("p");
+    if (f.where){
+      const tag = document.createElement("span");
+      tag.className = "where";
+      tag.textContent = f.where;
+      line.appendChild(tag);
+    }
+    line.appendChild(document.createTextNode(f.text));
+    card.appendChild(line);
+  });
+  const note = document.createElement("p");
+  note.className = "caveat";
+  note.textContent = "Only the names the NLT translators explain in their own footnotes. " +
+                     "A chapter with no such note shows nothing here.";
+  card.appendChild(note);
+  return card;
+}
+
+function renderPassage(payload){
+  const box = document.getElementById("passage");
+  box.innerHTML = "";
+
+  const verses = document.createElement("div");
+  verses.className = "verses";
+  const doc = new DOMParser().parseFromString(payload.html, "text/html");
+  sanitise(doc.body, verses, document);       /* cached HTML is cleaned again */
+
+  const summary = summaryOf(verses);
+  if (summary) box.appendChild(summary);
+  box.appendChild(verses);
+  wireVerseTaps(verses, payload.ref);
+
+  const names = namesIn(verses);
+  if (names) box.appendChild(names);
+
+  const src = document.createElement("p");
+  src.className = "src";
+  src.textContent = payload.name + " · tap any verse to keep it, tap more to add them, " +
+                    "tap again to remove · saved on this device, so it opens without internet next time.";
+  box.appendChild(src);
+  if (payload.copyright){
+    const note = document.createElement("p");
+    note.className = "copyright";
+    note.textContent = payload.copyright;
+    box.appendChild(note);
+  }
+}
+
+async function loadPassage(force){
+  const info = chapterFor(viewDate);
+  const box = document.getElementById("passage");
+  if (info.state !== "ok"){ box.innerHTML = '<p class="empty">No chapter for this day.</p>'; return; }
+  const ref = info.item.ref;
+  const cached = jget(textKey(ref), null);
+  if (cached && cached.html && !force){ renderPassage(cached); return; }
+  box.innerHTML = '<p class="empty">Loading ' + prettyRef(ref) + '&hellip;</p>';
+  try {
+    const payload = await fetchChapter(ref, force);
+    const now = chapterFor(viewDate);
+    if (now.state === "ok" && now.item.ref === ref) renderPassage(payload);
+  } catch (err) {
+    box.innerHTML = '<p class="empty">Could not fetch <b>' + prettyRef(ref) + '</b> (' + String(err.message) +
+      ').<br>No internet, most likely. Read it in your own Bible &mdash; you can still write below, and it will save.</p>';
+  }
+}
+
+/* ------------------------------- entries -------------------------------- */
+function blankEntry(date, ref){
+  return { date:date, ref:ref, plan:settings.plan, done:false,
+           verse:"", summary:"", learnt:"", apply:"", prayer:"", tags:[], verses:[], quote:"",
+           created:null, updated:null };
+}
+function currentEntry(){
+  const info = chapterFor(viewDate);
+  const ref = info.state === "ok" ? info.item.ref : "";
+  if (!entries[viewDate]) return blankEntry(viewDate, ref);
+  const e = entries[viewDate];
+  if (!e.ref && ref) e.ref = ref;
+  return e;
+}
+function isBlank(e){
+  return !e.done && !e.verse.trim() && !(e.summary || "").trim() && !e.learnt.trim() &&
+         !e.apply.trim() && !e.prayer.trim() && !e.tags.length && !(e.verses || []).length;
+}
+function readForm(){
+  const e = currentEntry();
+  const info = chapterFor(viewDate);
+  e.date = viewDate;
+  e.ref = info.state === "ok" ? info.item.ref : e.ref;
+  e.plan = settings.plan;
+  e.done = document.getElementById("fDone").checked;
+  e.verse = document.getElementById("fVerse").value;
+  e.summary = document.getElementById("fSummary").value;
+  e.learnt = document.getElementById("fLearnt").value;
+  e.apply = document.getElementById("fApply").value;
+  e.prayer = document.getElementById("fPrayer").value;
+  e.tags = document.getElementById("fTags").value.split(",").map(function(t){return t.trim();}).filter(Boolean);
+  e.verses = chosen.slice();
+  e.quote = lastQuote;
+  return e;
+}
+function writeForm(e){
+  chosen = (e.verses || []).slice();
+  lastQuote = e.quote || "";
+  document.getElementById("fDone").checked = !!e.done;
+  document.getElementById("fVerse").value = e.verse || "";
+  document.getElementById("fSummary").value = e.summary || "";
+  document.getElementById("fLearnt").value = e.learnt || "";
+  document.getElementById("fApply").value = e.apply || "";
+  document.getElementById("fPrayer").value = e.prayer || "";
+  document.getElementById("fTags").value = (e.tags || []).join(", ");
+}
+function saveEntry(showFlag){
+  const e = readForm();
+  const now = new Date().toISOString();
+  if (isBlank(e)) { delete entries[viewDate]; }
+  else {
+    if (!e.created) e.created = now;
+    e.updated = now;
+    entries[viewDate] = e;
+  }
+  const ok = jset("entries", entries);
+  scheduleSync();
+  if (showFlag){
+    const flag = document.getElementById("savedFlag");
+    flag.textContent = ok ? "Saved" : "Could not save — storage is full";
+    flag.style.color = ok ? "var(--good)" : "var(--warn)";
+    flag.classList.add("on");
+    setTimeout(function(){ flag.classList.remove("on"); }, 1400);
+  }
+  renderStats();
+  renderProgress();
+  return ok;
+}
+
+/* --------------------------------- sync ----------------------------------
+   The app cannot hold a password, so it posts to one address that does the
+   writing - a script in Rachel's own Google account. Each day is keyed by its
+   date and overwritten, so sending twice is harmless and a failed send can
+   simply be retried. Nothing is ever deleted here as a result of a send.
+------------------------------------------------------------------------- */
+const SYNC_BATCH = 25;
+let syncTimer = null;
+let syncing = false;
+
+function pendingEntries(){
+  return Object.keys(entries).sort().filter(function(d){
+    const e = entries[d];
+    return e.updated && e.synced !== e.updated;
+  }).map(function(d){ return entries[d]; });
+}
+
+function syncStatus(message){
+  const el = document.getElementById("syncState");
+  if (!el) return;
+  if (message){ el.textContent = message; return; }
+  const waiting = pendingEntries().length;
+  if (!settings.syncUrl){
+    el.textContent = "Not set up. Your writing is on this device only.";
+  } else if (waiting){
+    el.textContent = waiting + " day" + (waiting === 1 ? "" : "s") + " waiting to be sent" +
+      (settings.lastSync ? " · last sent " + new Date(settings.lastSync).toLocaleString() : "");
+  } else {
+    el.textContent = "Everything is backed up" +
+      (settings.lastSync ? " · last sent " + new Date(settings.lastSync).toLocaleString() : "");
+  }
+}
+
+function forSending(e){
+  return {
+    date: e.date, reference: prettyRef(e.ref), plan: e.plan, read: !!e.done,
+    verse: e.verse || "", summary: e.summary || "", learnt: e.learnt || "",
+    apply: e.apply || "", prayer: e.prayer || "", tags: (e.tags || []).join(", "),
+    versesChosen: (e.verses || []).join(", "), updated: e.updated
+  };
+}
+
+async function postToSync(payload){
+  /* text/plain keeps this a "simple" request, which is what a Google Apps
+     Script endpoint will accept from a browser without extra setup. */
+  const res = await fetch(settings.syncUrl, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(payload),
+    redirect: "follow"
+  });
+  if (!res.ok) throw new Error("the address answered " + res.status);
+  const text = (await res.text()).trim();
+  let reply = null;
+  try { reply = JSON.parse(text); } catch (err) { /* not JSON - judged below */ }
+  if (reply && reply.ok === false) throw new Error(reply.error || "the script refused it");
+  if (!reply) throw new Error("that address did not answer like the script does");
+  return reply;
+}
+
+async function syncNow(loud){
+  if (syncing) return;
+  if (!settings.syncUrl){ if (loud) toast("No sync address set yet", null, null); return; }
+  const waiting = pendingEntries();
+  if (!waiting.length){ syncStatus(); if (loud) toast("Nothing waiting - all backed up", null, null); return; }
+
+  syncing = true;
+  syncStatus("Sending " + waiting.length + " day" + (waiting.length === 1 ? "" : "s") + "\u2026");
+  let sent = 0;
+  try {
+    for (let i = 0; i < waiting.length; i += SYNC_BATCH){
+      const batch = waiting.slice(i, i + SYNC_BATCH);
+      await postToSync({ app:"daily-chapter", version:1, entries: batch.map(forSending) });
+      batch.forEach(function(e){ if (entries[e.date]) entries[e.date].synced = e.updated; });
+      sent += batch.length;
+      jset("entries", entries);
+    }
+    settings.lastSync = new Date().toISOString();
+    jset("settings", settings);
+    syncStatus();
+    if (loud) toast(sent + " day" + (sent === 1 ? "" : "s") + " sent", null, null);
+  } catch (err) {
+    syncStatus("Could not send (" + err.message + "). " + pendingEntries().length +
+               " waiting - it will try again.");
+    if (loud) toast("Could not send - see Settings", null, null);
+  } finally {
+    syncing = false;
+  }
+}
+
+function scheduleSync(){
+  if (!settings.syncUrl) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(function(){ syncNow(false); }, 4000);
+}
+
+/* -------------------------------- streaks -------------------------------- */
+function doneDates(){
+  return Object.keys(entries).filter(function(d){ return entries[d].done; }).sort();
+}
+function currentStreak(){
+  const set = new Set(doneDates());
+  let day = todayStr();
+  if (!set.has(day)) day = shift(day, -1);      /* today not ticked yet is fine */
+  let n = 0;
+  while (set.has(day)) { n++; day = shift(day, -1); }
+  return n;
+}
+function bestStreak(){
+  const list = doneDates();
+  let best = 0, run = 0, prev = null;
+  list.forEach(function(d){
+    run = (prev && daysBetween(prev, d) === 1) ? run + 1 : 1;
+    if (run > best) best = run;
+    prev = d;
+  });
+  return best;
+}
+function firstUnreadDate(){
+  const today = todayStr();
+  /* Jumping to 1 Kings 14 sets the start date months back so the sums work.
+     Counting missed days from there would claim 300 days were skipped, which
+     never happened - so count from when the plan was last pointed somewhere. */
+  const from = (settings.pointedAt && daysBetween(settings.start, settings.pointedAt) > 0)
+    ? settings.pointedAt : settings.start;
+  if (daysBetween(from, today) < 0) return null;
+  let d = from;
+  while (daysBetween(d, today) >= 0){
+    if (chapterFor(d).state !== "ok") break;
+    if (!(entries[d] && entries[d].done)) return d;
+    d = shift(d, 1);
+  }
+  return null;
+}
+
+/* -------------------------------- render -------------------------------- */
+function renderHeader(){
+  const n = currentStreak();
+  document.getElementById("streak").textContent = n ? (n + " day" + (n===1?"":"s") + " in a row") : "";
+}
+function renderProgress(){
+  const info = chapterFor(viewDate);
+  const refEl = document.getElementById("refLabel");
+  const planEl = document.getElementById("planLabel");
+  const progEl = document.getElementById("progressLabel");
+  const bar = document.getElementById("progressBar");
+
+  const isToday = viewDate === todayStr();
+  document.getElementById("whenLabel").textContent = (isToday ? "Today · " : "") + prettyDate(viewDate);
+
+  if (info.state === "before"){
+    refEl.textContent = "Not started yet";
+    planEl.textContent = "Your plan begins on " + prettyDate(settings.start) + ".";
+  } else if (info.state === "after"){
+    refEl.textContent = "Plan finished — well done";
+    planEl.textContent = plan.name + " · all " + plan.chapters.length + " chapters. Pick a new plan in Settings.";
+  } else {
+    refEl.textContent = prettyRef(info.item.ref);
+    planEl.textContent = plan.name + " · day " + (info.index + 1) + " of " + plan.chapters.length;
+  }
+
+  const readInPlan = Object.keys(entries).filter(function(d){
+    return entries[d].done && entries[d].plan === settings.plan;
+  }).length;
+  const pct = plan.chapters.length ? Math.min(100, Math.round(readInPlan / plan.chapters.length * 1000) / 10) : 0;
+  bar.style.width = pct + "%";
+  progEl.textContent = readInPlan + " of " + plan.chapters.length + " chapters read (" + pct + "%)";
+
+  const notice = document.getElementById("behindNotice");
+  const missed = firstUnreadDate();
+  if (missed && missed !== todayStr()){
+    const gap = daysBetween(missed, todayStr());
+    notice.classList.remove("hide");
+    notice.innerHTML = "You have " + gap + " day" + (gap===1?"":"s") +
+      " not ticked off. <button id='jumpBack'>Go to " + prettyDate(missed) + "</button>";
+    document.getElementById("jumpBack").addEventListener("click", function(){ goTo(missed); });
+  } else {
+    notice.classList.add("hide");
+  }
+}
+function renderStats(){
+  const all = Object.keys(entries);
+  document.getElementById("sEntries").textContent = all.length;
+  document.getElementById("sRead").textContent = doneDates().length;
+  document.getElementById("sStreak").textContent = currentStreak();
+  document.getElementById("sBest").textContent = bestStreak();
+  renderHeader();
+}
+function renderList(){
+  const q = document.getElementById("search").value.trim().toLowerCase();
+  const box = document.getElementById("entryList");
+  const dates = Object.keys(entries).sort().reverse().filter(function(d){
+    if (!q) return true;
+    const e = entries[d];
+    return [d, e.ref, e.verse, e.summary, e.learnt, e.apply, e.prayer, (e.tags||[]).join(" ")]
+      .join(" ").toLowerCase().indexOf(q) !== -1;
+  });
+  box.innerHTML = "";
+  if (!dates.length){
+    box.innerHTML = '<p class="empty">' + (q ? "Nothing matches that." : "Nothing written yet. Today is a good day to start.") + '</p>';
+    return;
+  }
+  dates.forEach(function(d){
+    const e = entries[d];
+    const wrap = document.createElement("div");
+    wrap.className = "entry";
+    const h = document.createElement("h3");
+    h.textContent = (prettyRef(e.ref) || "(no chapter)") + (e.done ? "  ✓" : "");
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    meta.textContent = prettyDate(d);
+    wrap.appendChild(h); wrap.appendChild(meta);
+    [["Verse", e.verse], ["Summary", e.summary], ["Learnt", e.learnt],
+     ["Doing", e.apply], ["Praying", e.prayer]].forEach(function(pair){
+      if (!pair[1] || !String(pair[1]).trim()) return;
+      const f = document.createElement("div"); f.className = "field";
+      const b = document.createElement("b"); b.textContent = pair[0];
+      const p = document.createElement("p"); p.textContent = pair[1];
+      f.appendChild(b); f.appendChild(p); wrap.appendChild(f);
+    });
+    if ((e.tags||[]).length){
+      const tags = document.createElement("div"); tags.className = "tags";
+      e.tags.forEach(function(t){ const s = document.createElement("span"); s.className="tag"; s.textContent = t; tags.appendChild(s); });
+      wrap.appendChild(tags);
+    }
+    const row = document.createElement("div"); row.className = "row";
+    const open = document.createElement("button"); open.className = "btn ghost"; open.textContent = "Open this day";
+    open.addEventListener("click", function(){ goTo(d); showTab("today"); });
+    row.appendChild(open);
+    wrap.appendChild(row);
+    box.appendChild(wrap);
+  });
+}
+function render(){
+  renderProgress();
+  if (document.getElementById("jumpBook")) fillJump(false);
+  writeForm(currentEntry());
+  renderStats();
+  renderList();
+  loadPassage(false);
+}
+function goTo(dateStr){
+  saveEntry(false);
+  viewDate = dateStr;
+  render();
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+
+/* --------------------------------- tabs --------------------------------- */
+function showTab(name){
+  ["today","journal","settings"].forEach(function(t){
+    document.getElementById("tab-" + t).classList.toggle("hide", t !== name);
+    document.getElementById("tab-btn-" + t).setAttribute("aria-selected", String(t === name));
+  });
+  if (name === "journal") renderList();
+}
+document.querySelectorAll("nav button").forEach(function(b){
+  b.addEventListener("click", function(){ saveEntry(false); showTab(b.dataset.tab); });
+});
+
+/* -------------------------------- export -------------------------------- */
+function download(filename, text, mime){
+  const blob = new Blob([text], {type: mime || "text/plain;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+function asMarkdown(){
+  const dates = Object.keys(entries).sort();
+  let out = "# Daily Chapter journal\n\nExported " + todayStr() + " · " + dates.length + " entries\n";
+  dates.forEach(function(d){
+    const e = entries[d];
+    out += "\n---\n\n## " + prettyDate(d) + " — " + prettyRef(e.ref) + (e.done ? " ✓" : "") + "\n";
+    if (e.verse)   out += "\n**Verse**\n\n" + e.verse + "\n";
+    if (e.summary) out += "\n**My summary**\n\n" + e.summary + "\n";
+    if (e.learnt) out += "\n**What I learnt**\n\n" + e.learnt + "\n";
+    if (e.apply)  out += "\n**How I will use it**\n\n" + e.apply + "\n";
+    if (e.prayer) out += "\n**Praying / wondering**\n\n" + e.prayer + "\n";
+    if ((e.tags||[]).length) out += "\nTags: " + e.tags.join(", ") + "\n";
+  });
+  return out;
+}
+function asCsv(){
+  const cols = ["date","reference","read","verse","summary","learnt","apply","prayer","tags"];
+  const esc = function(v){ return '"' + String(v == null ? "" : v).replace(/"/g,'""') + '"'; };
+  const rows = [cols.join(",")];
+  Object.keys(entries).sort().forEach(function(d){
+    const e = entries[d];
+    rows.push([d, prettyRef(e.ref), e.done ? "yes" : "no", e.verse, e.summary,
+               e.learnt, e.apply, e.prayer, (e.tags||[]).join("; ")].map(esc).join(","));
+  });
+  return rows.join("\r\n");
+}
+function copyText(text, btn){
+  const done = function(){ const old = btn.textContent; btn.textContent = "Copied"; setTimeout(function(){ btn.textContent = old; }, 1400); };
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done, function(){ window.prompt("Copy this:", text); });
+  } else { window.prompt("Copy this:", text); }
+}
+
+/* ------------------------------- settings ------------------------------- */
+function fillSettings(){
+  const sel = document.getElementById("setPlan");
+  sel.innerHTML = "";
+  PLANS.forEach(function(p){
+    const days = buildPlan(p.id).chapters.length;
+    const o = document.createElement("option");
+    o.value = p.id;
+    o.textContent = p.name + " (" + days + " days)";
+    sel.appendChild(o);
+  });
+  sel.value = settings.plan;
+  document.getElementById("setStart").value = settings.start;
+
+  const trans = document.getElementById("setTrans");
+  trans.innerHTML = "";
+  TRANSLATIONS.forEach(function(t){
+    const o = document.createElement("option");
+    o.value = t.id;
+    o.textContent = t.label;
+    trans.appendChild(o);
+  });
+  trans.value = settings.translation;
+  document.getElementById("setKey").value = settings.nltKey || "";
+  document.getElementById("setSync").value = settings.syncUrl || "";
+  syncStatus();
+  document.getElementById("setNotes").checked = !!settings.notes;
+  document.getElementById("nltCard").classList.toggle("hide", translation().source !== "nlt");
+  document.body.classList.toggle("show-notes", !!settings.notes);
+  document.getElementById("pageFooter").textContent = translation().source === "nlt"
+    ? "New Living Translation, \u00a9 Tyndale House Foundation. Chapter text from api.nlt.to."
+    : "Chapter text from bible-api.com · WEB and KJV are public domain.";
+  let bytes = 0;
+  for (let i = 0; i < localStorage.length; i++){
+    const k = localStorage.key(i);
+    if (k && k.indexOf(NS) === 0) bytes += k.length + (localStorage.getItem(k) || "").length;
+  }
+  document.getElementById("storeInfo").textContent =
+    Object.keys(entries).length + " entries · about " + Math.round(bytes/1024) + " KB used on this device.";
+}
+
+/* ------------------------------- wiring --------------------------------- */
+let saveTimer = null;
+["fDone","fVerse","fSummary","fLearnt","fApply","fPrayer","fTags"].forEach(function(id){
+  const el = document.getElementById(id);
+  const ev = id === "fDone" ? "change" : "input";
+  el.addEventListener(ev, function(){
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function(){ saveEntry(false); }, 700);
+    if (id === "fDone") saveEntry(false);
+  });
+});
+document.getElementById("saveBtn").addEventListener("click", function(){ saveEntry(true); });
+document.getElementById("copyBtn").addEventListener("click", function(ev){
+  saveEntry(false);
+  const e = currentEntry();
+  const parts = [prettyDate(viewDate) + " — " + prettyRef(e.ref)];
+  if (e.verse) parts.push("Verse: " + e.verse);
+  if (e.summary) parts.push("Summary: " + e.summary);
+  if (e.learnt) parts.push("Learnt: " + e.learnt);
+  if (e.apply) parts.push("Doing: " + e.apply);
+  if (e.prayer) parts.push("Praying: " + e.prayer);
+  copyText(parts.join("\n\n"), ev.currentTarget);
+});
+document.getElementById("prevDay").addEventListener("click", function(){ goTo(shift(viewDate, -1)); });
+document.getElementById("nextDay").addEventListener("click", function(){ goTo(shift(viewDate,  1)); });
+document.getElementById("todayBtn").addEventListener("click", function(){ goTo(todayStr()); });
+document.getElementById("reloadText").addEventListener("click", function(){ loadPassage(true); });
+document.getElementById("search").addEventListener("input", renderList);
+
+document.getElementById("expJson").addEventListener("click", function(){
+  download("daily-chapter-backup-" + todayStr() + ".json",
+    JSON.stringify({ app:"daily-chapter", version:1, exported:new Date().toISOString(),
+      settings:Object.assign({}, settings, {nltKey:"", syncUrl:""}), entries:entries }, null, 2),
+    "application/json");
+});
+document.getElementById("expMd").addEventListener("click", function(){
+  download("daily-chapter-journal-" + todayStr() + ".md", asMarkdown(), "text/markdown;charset=utf-8");
+});
+document.getElementById("expCsv").addEventListener("click", function(){
+  download("daily-chapter-journal-" + todayStr() + ".csv", asCsv(), "text/csv;charset=utf-8");
+});
+document.getElementById("copyAll").addEventListener("click", function(ev){ copyText(asMarkdown(), ev.currentTarget); });
+
+document.getElementById("impBtn").addEventListener("click", function(){ document.getElementById("impFile").click(); });
+document.getElementById("impFile").addEventListener("change", function(ev){
+  const file = ev.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(){
+    let data;
+    try { data = JSON.parse(reader.result); }
+    catch (e) { alert("That file is not a Daily Chapter backup."); return; }
+    if (!data || !data.entries){ alert("That file has no entries in it."); return; }
+    let added = 0, updated = 0;
+    Object.keys(data.entries).forEach(function(d){
+      const incoming = data.entries[d];
+      const mine = entries[d];
+      if (!mine){ entries[d] = incoming; added++; }
+      else if ((incoming.updated || "") > (mine.updated || "")){ entries[d] = incoming; updated++; }
+    });
+    if (data.settings){
+      const key = settings.nltKey, sync = settings.syncUrl;
+      settings = Object.assign({}, settings, data.settings);
+      if (!data.settings.nltKey) settings.nltKey = key;
+      if (!data.settings.syncUrl) settings.syncUrl = sync;
+      jset("settings", settings);
+      plan = buildPlan(settings.plan);
+    }
+    jset("entries", entries);
+    fillSettings(); render();
+    alert("Restored. " + added + " new entries, " + updated + " updated.");
+  };
+  reader.readAsText(file);
+  ev.target.value = "";
+});
+
+document.getElementById("setPlan").addEventListener("change", function(ev){
+  settings.plan = ev.target.value; jset("settings", settings);
+  plan = buildPlan(settings.plan); fillSettings(); render();
+});
+document.getElementById("setStart").addEventListener("change", function(ev){
+  if (!ev.target.value) return;
+  settings.start = ev.target.value; jset("settings", settings); fillSettings(); render();
+});
+document.getElementById("setTrans").addEventListener("change", function(ev){
+  settings.translation = ev.target.value; jset("settings", settings);
+  fillSettings(); loadPassage(false);
+});
+document.getElementById("setSync").addEventListener("change", function(ev){
+  const url = ev.target.value.trim();
+  if (url && !/^https:\/\//.test(url)){
+    toast("That is not a web address - it must start with https://", null, null);
+    return;
+  }
+  settings.syncUrl = url;
+  jset("settings", settings);
+  syncStatus();
+  if (url) syncNow(true);
+});
+document.getElementById("syncNow").addEventListener("click", function(){ syncNow(true); });
+document.getElementById("syncTest").addEventListener("click", async function(){
+  if (!settings.syncUrl){ toast("Paste the address first", null, null); return; }
+  syncStatus("Testing the address\u2026");
+  try {
+    const reply = await postToSync({ app:"daily-chapter", version:1, test:true, entries:[] });
+    syncStatus("The address answered correctly" + (reply.wrote ? " (" + reply.wrote + ")" : "") + ".");
+    toast("That address works", null, null);
+  } catch (err) {
+    syncStatus("Test failed: " + err.message);
+    toast("Test failed - see Settings", null, null);
+  }
+});
+document.getElementById("setKey").addEventListener("change", function(ev){
+  settings.nltKey = ev.target.value.trim(); jset("settings", settings); loadPassage(true);
+});
+document.getElementById("setNotes").addEventListener("change", function(ev){
+  settings.notes = ev.target.checked; jset("settings", settings);
+  document.body.classList.toggle("show-notes", settings.notes);
+});
+let jumpReady = false;
+
+function fillChapters(want){
+  const bookSel = document.getElementById("jumpBook");
+  const chapSel = document.getElementById("jumpChapter");
+  const book = BOOKS[bookIndex(bookSel.value)] || BOOKS[0];
+  chapSel.innerHTML = "";
+  for (let c = 1; c <= book.chapters; c++){
+    const o = document.createElement("option");
+    o.value = String(c);
+    o.textContent = String(c);
+    chapSel.appendChild(o);
+  }
+  chapSel.value = String(Math.min(want || 1, book.chapters));
+}
+
+/* force = point the two dropdowns at today's chapter. Without it they are left
+   alone, because render() runs while the reader is halfway through choosing a
+   book and resetting the box under their finger loses the choice. */
+function fillJump(force){
+  const bookSel = document.getElementById("jumpBook");
+  if (!bookSel.options.length){
+    BOOKS.forEach(function(b){
+      const o = document.createElement("option");
+      o.value = b.name;
+      o.textContent = b.name;
+      bookSel.appendChild(o);
+    });
+  }
+  const info = chapterFor(viewDate);
+  const here = info.state === "ok" ? info.item : null;
+
+  if (force || !jumpReady){
+    if (here) bookSel.value = here.book;
+    fillChapters(here ? here.chapter : 1);
+    jumpReady = true;
+  }
+  document.getElementById("whereNow").textContent = here
+    ? "Today is " + prettyRef(here.ref) + "."
+    : "No chapter for today yet.";
+}
+
+/* Point the plan at a chapter. If the plan in use does not contain it, move to
+   the whole-Bible plan, which contains everything. */
+function jumpTo(ref){
+  let index = plan.chapters.findIndex(function(c){ return c.ref === ref; });
+  if (index === -1){
+    settings.plan = "whole";
+    plan = buildPlan(settings.plan);
+    index = plan.chapters.findIndex(function(c){ return c.ref === ref; });
+  }
+  if (index === -1) return false;
+  settings.start = shift(todayStr(), -index);
+  settings.pointedAt = todayStr();
+  jset("settings", settings);
+  viewDate = todayStr();
+  fillSettings(); render(); fillJump(true);
+  return true;
+}
+
+document.getElementById("jumpBook").addEventListener("change", function(){ fillChapters(1); });
+document.getElementById("jumpGo").addEventListener("click", function(){
+  const ref = document.getElementById("jumpBook").value + " " +
+              document.getElementById("jumpChapter").value;
+  if (jumpTo(ref)){
+    toast("Today is now " + prettyRef(ref), "Read it", function(){ showTab("today"); });
+    showTab("today");
+    window.scrollTo({ top:0, behavior:"smooth" });
+  }
+});
+
+document.getElementById("startToday").addEventListener("click", function(){
+  if (!confirm("Set day 1 of the plan to today? Your writing is kept.")) return;
+  settings.start = todayStr(); settings.pointedAt = todayStr();
+  jset("settings", settings); fillSettings(); goTo(todayStr()); fillJump(true);
+});
+document.getElementById("clearCache").addEventListener("click", function(){
+  const keys = [];
+  for (let i = 0; i < localStorage.length; i++){
+    const k = localStorage.key(i);
+    if (k && k.indexOf(NS + "text.") === 0) keys.push(k);
+  }
+  keys.forEach(function(k){ localStorage.removeItem(k); });
+  fillSettings(); loadPassage(true);
+  alert("Cleared " + keys.length + " saved chapters. Your writing is untouched.");
+});
+document.getElementById("wipe").addEventListener("click", function(){
+  const typed = window.prompt("This deletes every entry on this device and cannot be undone.\nType DELETE to confirm.");
+  if (typed !== "DELETE") return;
+  Object.keys(localStorage).filter(function(k){ return k.indexOf(NS) === 0; }).forEach(function(k){ localStorage.removeItem(k); });
+  entries = {}; settings = Object.assign({}, DEFAULT_SETTINGS, {start: todayStr()});
+  jset("settings", settings); plan = buildPlan(settings.plan);
+  fillSettings(); goTo(todayStr());
+});
+
+window.addEventListener("beforeunload", function(){ saveEntry(false); });
+document.addEventListener("visibilitychange", function(){ if (document.hidden) saveEntry(false); });
+
+if (location.protocol === "http:" || location.protocol === "https:"){
+  if ("serviceWorker" in navigator){
+    window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); });
+  }
+}
+
+fillSettings();
+fillJump(true);
+render();
+if (settings.syncUrl) setTimeout(function(){ syncNow(false); }, 1500);
+</script>
+</body>
+</html>
