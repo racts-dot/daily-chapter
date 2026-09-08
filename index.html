@@ -204,20 +204,11 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
     <div class="passage" id="passage"><p class="empty">Loading the chapter&hellip;</p></div>
   </div>
 
-  <div class="card questions">
-    <b>Three questions to answer</b>
-    <ul class="prompts">
-      <li>What happens in this chapter?</li>
-      <li>Who is it about, and what do they do?</li>
-      <li>What is it getting at?</li>
-    </ul>
-  </div>
-
   <div class="card" id="writeCard">
     <label class="check"><input type="checkbox" id="fDone"> I read it today</label>
 
     <label for="fSummary">My summary of this chapter</label>
-    <textarea id="fSummary" class="taller" placeholder="In your own words. This box grows as you write."></textarea>
+    <textarea id="fSummary" class="taller" placeholder=""></textarea>
 
     <label for="fVerse">The verse that stood out</label>
     <textarea id="fVerse" placeholder="e.g. John 1:5 &mdash; The light shines in the darkness&hellip;"></textarea>
@@ -387,12 +378,7 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
     <b id="memoTitle">Notes</b>
     <button id="memoClose">Done</button>
   </div>
-  <ul class="prompts">
-    <li>What happens in this chapter?</li>
-    <li>Who is it about, and what do they do?</li>
-    <li>What is it getting at?</li>
-  </ul>
-  <textarea id="memoText" placeholder="Jot as you read. This is the same box as &ldquo;My summary of this chapter&rdquo; &mdash; nothing is written twice."></textarea>
+  <textarea id="memoText" placeholder=""></textarea>
   <div class="memo-foot">
     <span id="memoSaved">Saves as you type</span>
     <button id="memoAll">Open the full page</button>
@@ -1864,7 +1850,7 @@ function applyType(){
    the journal uses. Held on the device until they get through, so a note made
    with no signal is not lost.
 ------------------------------------------------------------------------- */
-const APP_VERSION = "v21";
+const APP_VERSION = "v22";
 
 function snags(){ return jget("snags", []); }
 
