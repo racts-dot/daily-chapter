@@ -25,17 +25,21 @@ body{
   font:18px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
   -webkit-text-size-adjust:100%;
 }
-.wrap{max-width:720px;margin:0 auto;padding:0 var(--pad) 96px}
-header{padding:18px 0 8px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.wrap{max-width:720px;margin:0 auto;padding:0 var(--pad) 110px;
+  /* Start about 3 cm down. On an installed app the status bar sits over the
+     top of the page, so take the notch into account rather than guessing. */
+  padding-top:max(3cm, calc(env(safe-area-inset-top, 0px) + 1.4cm))}
+header{padding:0 0 10px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
 header h1{font-size:20px;margin:0;letter-spacing:.2px}
 header .streak{margin-left:auto;font-size:15px;color:var(--soft)}
 nav{display:flex;gap:6px;margin:10px 0 18px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:5px}
 nav button{flex:1;font:inherit;font-size:16px;padding:9px 6px;border:0;border-radius:10px;background:transparent;color:var(--soft);cursor:pointer}
 nav button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:var(--pad);margin:0 0 16px}
-.daynav{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.daynav button{font:inherit;background:transparent;border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:6px 12px;cursor:pointer;min-width:44px}
-.daynav .when{flex:1;text-align:center;font-size:15px;color:var(--soft)}
+.tinyrow{display:flex;align-items:baseline;gap:14px;margin:10px 0 0;font-size:13px;color:var(--soft)}
+.tinyrow .when{flex:1}
+.link{font:inherit;font-size:13px;background:transparent;border:0;padding:0;color:var(--accent);
+  text-decoration:underline;cursor:pointer}
 .ref{font-size:32px;line-height:1.15;margin:2px 0 6px;font-weight:600}
 .sub{color:var(--soft);font-size:15px;margin:0 0 12px}
 .bar{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin:10px 0 4px}
@@ -164,20 +168,17 @@ body.show-notes .passage .tn-ref{font-weight:700;margin-right:6px}
 <!-- ============================= TODAY ============================= -->
 <section id="tab-today">
   <div class="card">
-    <div class="daynav">
-      <button id="prevDay" aria-label="Previous day">&#8249;</button>
-      <div class="when" id="whenLabel"></div>
-      <button id="nextDay" aria-label="Next day">&#8250;</button>
-    </div>
     <div class="ref" id="refLabel">&hellip;</div>
     <p class="sub" id="planLabel"></p>
     <div class="bar"><i id="progressBar" style="width:0%"></i></div>
-    <p class="sub" id="progressLabel"></p>
     <div id="behindNotice" class="notice hide"></div>
-    <div class="row">
-      <button class="btn ghost" id="todayBtn">Back to today</button>
-      <button class="btn ghost" id="reloadText">Reload the chapter</button>
-    </div>
+    <p class="tinyrow">
+      <span class="when" id="whenLabel"></span>
+      <button class="link" id="todayBtn">today</button>
+      <button class="link" id="reloadText">reload</button>
+      <button class="link hide" id="prevDay" aria-label="Previous day">&#8249;</button>
+      <button class="link hide" id="nextDay" aria-label="Next day">&#8250;</button>
+    </p>
   </div>
 
   <div class="card">
@@ -187,10 +188,10 @@ body.show-notes .passage .tn-ref{font-weight:700;margin-right:6px}
   <div class="card">
     <label class="check"><input type="checkbox" id="fDone"> I read it today</label>
 
-    <label for="fVerse">The verse that stood out <span class="hint">(tap any verse above to drop it in)</span></label>
+    <label for="fVerse">The verse that stood out</label>
     <textarea id="fVerse" placeholder="e.g. John 1:5 &mdash; The light shines in the darkness&hellip;"></textarea>
 
-    <label for="fSummary">My summary of this chapter <span class="hint">(in my own words, as long as you like)</span></label>
+    <label for="fSummary">My summary of this chapter</label>
     <ul class="prompts">
       <li>What happens in this chapter?</li>
       <li>Who is it about, and what do they do?</li>
@@ -201,13 +202,13 @@ body.show-notes .passage .tn-ref{font-weight:700;margin-right:6px}
     <label for="fLearnt">What I learnt today <span class="hint">(understanding)</span></label>
     <textarea id="fLearnt" class="tall" placeholder="In my own words: what is this chapter actually saying?"></textarea>
 
-    <label for="fApply">How I will use it <span class="hint">(one small thing)</span></label>
+    <label for="fApply">How I will use it</label>
     <textarea id="fApply" placeholder="e.g. Ring Mum before Friday."></textarea>
 
-    <label for="fPrayer">Prayer / question I am sitting with</label>
+    <label for="fPrayer">Prayer / question</label>
     <textarea id="fPrayer" placeholder="Anything you want to come back to."></textarea>
 
-    <label for="fTags">Tags <span class="hint">(comma separated, for finding it later)</span></label>
+    <label for="fTags">Tags</label>
     <input type="text" id="fTags" placeholder="patience, work, family">
 
     <div class="row">
@@ -837,7 +838,7 @@ function summaryOf(verses){
   const card = document.createElement("div");
   card.className = "summary";
   const title = document.createElement("b");
-  title.textContent = "In this chapter — the NLT's own headings, to start you off";
+  title.textContent = "In this chapter";
   card.appendChild(title);
   const list = document.createElement("ul");
   heads.forEach(function(h){
@@ -882,8 +883,7 @@ function namesIn(verses){
   });
   const note = document.createElement("p");
   note.className = "caveat";
-  note.textContent = "Only the names the NLT translators explain in their own footnotes. " +
-                     "A chapter with no such note shows nothing here.";
+  note.textContent = "Only the names the NLT explains in its own footnotes.";
   card.appendChild(note);
   return card;
 }
@@ -907,8 +907,7 @@ function renderPassage(payload){
 
   const src = document.createElement("p");
   src.className = "src";
-  src.textContent = payload.name + " · tap any verse to keep it, tap more to add them, " +
-                    "tap again to remove · saved on this device, so it opens without internet next time.";
+  src.textContent = payload.name + " · tap a verse to keep it";
   box.appendChild(src);
   if (payload.copyright){
     const note = document.createElement("p");
@@ -1145,11 +1144,16 @@ function renderHeader(){
   const n = currentStreak();
   document.getElementById("streak").textContent = n ? (n + " day" + (n===1?"":"s") + " in a row") : "";
 }
+function readInPlan(){
+  return Object.keys(entries).filter(function(d){
+    return entries[d].done && entries[d].plan === settings.plan;
+  }).length;
+}
+
 function renderProgress(){
   const info = chapterFor(viewDate);
   const refEl = document.getElementById("refLabel");
   const planEl = document.getElementById("planLabel");
-  const progEl = document.getElementById("progressLabel");
   const bar = document.getElementById("progressBar");
 
   const isToday = viewDate === todayStr();
@@ -1163,15 +1167,13 @@ function renderProgress(){
     planEl.textContent = plan.name + " · all " + plan.chapters.length + " chapters. Pick a new plan in Settings.";
   } else {
     refEl.textContent = prettyRef(info.item.ref);
-    planEl.textContent = plan.name + " · day " + (info.index + 1) + " of " + plan.chapters.length;
+    planEl.textContent = "day " + (info.index + 1) + " of " + plan.chapters.length +
+                         " · " + readInPlan() + " read";
   }
 
-  const readInPlan = Object.keys(entries).filter(function(d){
-    return entries[d].done && entries[d].plan === settings.plan;
-  }).length;
-  const pct = plan.chapters.length ? Math.min(100, Math.round(readInPlan / plan.chapters.length * 1000) / 10) : 0;
+  const done = readInPlan();
+  const pct = plan.chapters.length ? Math.min(100, Math.round(done / plan.chapters.length * 1000) / 10) : 0;
   bar.style.width = pct + "%";
-  progEl.textContent = readInPlan + " of " + plan.chapters.length + " chapters read (" + pct + "%)";
 
   const notice = document.getElementById("behindNotice");
   const missed = firstUnreadDate();
