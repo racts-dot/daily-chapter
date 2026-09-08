@@ -122,11 +122,13 @@ body.show-notes .passage .tn-ref{font-weight:700;margin-right:6px}
 footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
   text-align:left;padding:0 0 8px}
 .fab{position:fixed;right:12px;bottom:14px;z-index:18;display:flex;gap:8px;align-items:center}
-.fab button{font:inherit;font-size:22px;font-weight:600;width:52px;height:52px;border:1px solid var(--line);
+.fab button{font:inherit;font-size:22px;font-weight:600;width:46px;height:46px;border:1px solid var(--line);
   border-radius:50%;background:var(--card);color:var(--ink);cursor:pointer;
   box-shadow:0 3px 12px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center}
-.fab button.wide{width:auto;height:52px;border-radius:26px;padding:0 20px;font-size:16px;
+.fab{gap:7px}
+.fab button.wide{width:auto;height:46px;border-radius:23px;padding:0 15px;font-size:15px;
   background:var(--accent);color:var(--accent-ink);border:0;font-weight:700}
+.fab button.plain{background:var(--card);color:var(--ink);border:1px solid var(--line);font-weight:600}
 .fab button:disabled{opacity:.35;cursor:default}
 .memo{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--card);
   border-top:1px solid var(--line);border-radius:16px 16px 0 0;padding:14px 16px 16px;
@@ -190,7 +192,7 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
     <div class="passage" id="passage"><p class="empty">Loading the chapter&hellip;</p></div>
   </div>
 
-  <div class="card">
+  <div class="card" id="writeCard">
     <label class="check"><input type="checkbox" id="fDone"> I read it today</label>
 
     <label for="fSummary">My summary of this chapter</label>
@@ -337,7 +339,8 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
      means scrolling back up. -->
 <div class="fab" id="fab">
   <button id="fabPrev" aria-label="Previous chapter" title="Previous chapter">&#8249;</button>
-  <button id="fabMemo" class="wide" aria-label="Write a note">Note</button>
+  <button id="fabMemo" class="wide" aria-label="Quick note">Note</button>
+  <button id="fabAll" class="wide plain" aria-label="Go to all the writing boxes">Boxes</button>
   <button id="fabNext" aria-label="Next chapter" title="Next chapter">&#8250;</button>
 </div>
 
@@ -1728,7 +1731,7 @@ function applyType(){
    the journal uses. Held on the device until they get through, so a note made
    with no signal is not lost.
 ------------------------------------------------------------------------- */
-const APP_VERSION = "v13";
+const APP_VERSION = "v14";
 
 function snags(){ return jget("snags", []); }
 
@@ -1819,6 +1822,11 @@ function memoOpen(open){
 document.getElementById("fabPrev").addEventListener("click", function(){ goTo(shift(viewDate, -1)); });
 document.getElementById("fabNext").addEventListener("click", function(){ goTo(shift(viewDate,  1)); });
 document.getElementById("fabMemo").addEventListener("click", function(){ memoOpen(true); });
+document.getElementById("fabAll").addEventListener("click", function(){
+  /* No focus() - putting the cursor in a box makes the keyboard cover the page
+     before she has seen which boxes there are. */
+  document.getElementById("writeCard").scrollIntoView({ behavior:"smooth", block:"start" });
+});
 document.getElementById("memoClose").addEventListener("click", function(){ memoOpen(false); });
 document.getElementById("memoAll").addEventListener("click", function(){
   memoOpen(false);
