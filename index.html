@@ -135,7 +135,9 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
 .memo-head b{font-size:16px;flex:1}
 .memo-head button{font:inherit;font-size:16px;font-weight:700;border:0;border-radius:10px;
   padding:8px 18px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
-.memo textarea{flex:1;min-height:34vh;font-size:17px}
+.memo textarea{flex:1;min-height:26vh;font-size:17px}
+.memo .prompts{margin:0 0 8px;padding:8px 12px 8px 26px;font-size:14px}
+.memo .prompts li{margin:0}
 .memo-foot{display:flex;align-items:center;gap:12px;margin-top:10px;font-size:14px;color:var(--soft)}
 .memo-foot button{font:inherit;font-size:14px;background:transparent;border:0;color:var(--accent);
   text-decoration:underline;cursor:pointer;padding:0;margin-left:auto}
@@ -364,6 +366,11 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
     <b id="memoTitle">Notes</b>
     <button id="memoClose">Done</button>
   </div>
+  <ul class="prompts">
+    <li>What happens in this chapter?</li>
+    <li>Who is it about, and what do they do?</li>
+    <li>What is it getting at?</li>
+  </ul>
   <textarea id="memoText" placeholder="Jot as you read. This is the same box as &ldquo;My summary of this chapter&rdquo; &mdash; nothing is written twice."></textarea>
   <div class="memo-foot">
     <span id="memoSaved">Saves as you type</span>
@@ -1721,7 +1728,7 @@ function applyType(){
    the journal uses. Held on the device until they get through, so a note made
    with no signal is not lost.
 ------------------------------------------------------------------------- */
-const APP_VERSION = "v12";
+const APP_VERSION = "v13";
 
 function snags(){ return jget("snags", []); }
 
