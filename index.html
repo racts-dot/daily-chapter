@@ -117,6 +117,25 @@ body.show-notes .passage .tn-ref{font-weight:700;margin-right:6px}
 .names .where{display:inline-block;min-width:44px;font-weight:700;color:var(--accent);margin-right:6px}
 .names .caveat{margin-top:8px;font-size:13px;color:var(--soft)}
 .copyright{margin-top:16px;font-size:12px;line-height:1.5;color:var(--soft)}
+.fab{position:fixed;right:12px;bottom:14px;z-index:18;display:flex;gap:8px;align-items:center}
+.fab button{font:inherit;font-size:22px;font-weight:600;width:52px;height:52px;border:1px solid var(--line);
+  border-radius:50%;background:var(--card);color:var(--ink);cursor:pointer;
+  box-shadow:0 3px 12px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center}
+.fab button.wide{width:auto;height:52px;border-radius:26px;padding:0 20px;font-size:16px;
+  background:var(--accent);color:var(--accent-ink);border:0;font-weight:700}
+.fab button:disabled{opacity:.35;cursor:default}
+.memo{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--card);
+  border-top:1px solid var(--line);border-radius:16px 16px 0 0;padding:14px 16px 16px;
+  box-shadow:0 -6px 24px rgba(0,0,0,.22);max-height:70vh;display:flex;flex-direction:column}
+.memo-head{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.memo-head b{font-size:16px;flex:1}
+.memo-head button{font:inherit;font-size:16px;font-weight:700;border:0;border-radius:10px;
+  padding:8px 18px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.memo textarea{flex:1;min-height:34vh;font-size:17px}
+.memo-foot{display:flex;align-items:center;gap:12px;margin-top:10px;font-size:14px;color:var(--soft)}
+.memo-foot button{font:inherit;font-size:14px;background:transparent;border:0;color:var(--accent);
+  text-decoration:underline;cursor:pointer;padding:0;margin-left:auto}
+.toast{bottom:82px}
 .toast{position:fixed;left:50%;bottom:20px;transform:translate(-50%,14px);z-index:20;
   display:flex;align-items:center;gap:14px;max-width:calc(100% - 32px);
   background:var(--accent);color:var(--accent-ink);border-radius:12px;
@@ -297,6 +316,29 @@ body.show-notes .passage .tn-ref{font-weight:700;margin-right:6px}
 </section>
 
 <footer id="pageFooter"></footer>
+</div>
+
+<!-- Follows you down the chapter, so moving on or jotting something never
+     means scrolling back up. -->
+<div class="fab" id="fab">
+  <button id="fabPrev" aria-label="Previous chapter" title="Previous chapter">&#8249;</button>
+  <button id="fabMemo" class="wide" aria-label="Write a note">Note</button>
+  <button id="fabNext" aria-label="Next chapter" title="Next chapter">&#8250;</button>
+</div>
+
+<div class="memo hide" id="memoPanel" role="dialog" aria-label="Write a note">
+  <div class="memo-head">
+    <b id="memoTitle">Notes</b>
+    <button id="memoClose">Done</button>
+  </div>
+  <textarea id="memoText" placeholder="Jot as you read. This is the same box as &ldquo;My summary of this chapter&rdquo; &mdash; nothing is written twice."></textarea>
+  <div class="memo-foot">
+    <span id="memoSaved">Saves as you type</span>
+    <button id="memoAll">Open the full page</button>
+  </div>
+</div>
+
+<div class="wrap" style="display:none">
 </div>
 
 <script>
@@ -1198,6 +1240,7 @@ function renderList(){
 }
 function render(){
   renderProgress();
+  if (typeof fabRefresh === "function") fabRefresh();
   if (document.getElementById("jumpBook")) fillJump(false);
   writeForm(currentEntry());
   renderStats();
@@ -1218,6 +1261,7 @@ function showTab(name){
     document.getElementById("tab-btn-" + t).setAttribute("aria-selected", String(t === name));
   });
   if (name === "journal") renderList();
+  if (typeof fabRefresh === "function") fabRefresh();
 }
 document.querySelectorAll("nav button").forEach(function(b){
   b.addEventListener("click", function(){ saveEntry(false); showTab(b.dataset.tab); });
@@ -1520,6 +1564,56 @@ document.getElementById("wipe").addEventListener("click", function(){
   fillSettings(); goTo(todayStr());
 });
 
+/* ------------------------------ floating bar ----------------------------- */
+function fabRefresh(){
+  const onToday = !document.getElementById("tab-today").classList.contains("hide");
+  const memoOpen = !document.getElementById("memoPanel").classList.contains("hide");
+  document.getElementById("fab").classList.toggle("hide", !onToday || memoOpen);
+  if (!onToday) return;
+
+  /* An arrow that leads nowhere is worse than no arrow, so say where it goes. */
+  [["fabPrev", -1], ["fabNext", 1]].forEach(function(pair){
+    const btn = document.getElementById(pair[0]);
+    const info = chapterFor(shift(viewDate, pair[1]));
+    btn.disabled = info.state !== "ok";
+    btn.title = info.state === "ok" ? prettyRef(info.item.ref) : "Nothing there";
+  });
+}
+
+function memoOpen(open){
+  const panel = document.getElementById("memoPanel");
+  const box = document.getElementById("memoText");
+  if (open){
+    const info = chapterFor(viewDate);
+    document.getElementById("memoTitle").textContent =
+      info.state === "ok" ? "Notes on " + prettyRef(info.item.ref) : "Notes";
+    box.value = document.getElementById("fSummary").value;
+    panel.classList.remove("hide");
+    box.focus({ preventScroll:true });
+  } else {
+    panel.classList.add("hide");
+  }
+  fabRefresh();
+}
+
+document.getElementById("fabPrev").addEventListener("click", function(){ goTo(shift(viewDate, -1)); });
+document.getElementById("fabNext").addEventListener("click", function(){ goTo(shift(viewDate,  1)); });
+document.getElementById("fabMemo").addEventListener("click", function(){ memoOpen(true); });
+document.getElementById("memoClose").addEventListener("click", function(){ memoOpen(false); });
+document.getElementById("memoAll").addEventListener("click", function(){
+  memoOpen(false);
+  document.getElementById("fSummary").scrollIntoView({ behavior:"smooth", block:"center" });
+});
+document.getElementById("memoText").addEventListener("input", function(ev){
+  /* One box, two windows onto it - never a second copy to reconcile. */
+  const field = document.getElementById("fSummary");
+  field.value = ev.target.value;
+  field.dispatchEvent(new Event("input"));
+});
+document.addEventListener("keydown", function(ev){
+  if (ev.key === "Escape" && !document.getElementById("memoPanel").classList.contains("hide")) memoOpen(false);
+});
+
 window.addEventListener("beforeunload", function(){ saveEntry(false); });
 document.addEventListener("visibilitychange", function(){ if (document.hidden) saveEntry(false); });
 
@@ -1532,6 +1626,7 @@ if (location.protocol === "http:" || location.protocol === "https:"){
 fillSettings();
 fillJump(true);
 render();
+fabRefresh();
 if (settings.syncUrl) setTimeout(function(){ syncNow(false); }, 1500);
 </script>
 </body>
