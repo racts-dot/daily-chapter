@@ -29,10 +29,10 @@ body{
   /* Start about 3 cm down. On an installed app the status bar sits over the
      top of the page, so take the notch into account rather than guessing. */
   padding-top:max(2.4cm, calc(env(safe-area-inset-top, 0px) + 1.1cm))}
-nav{display:flex;gap:6px;margin:2px 0 16px;background:var(--card);border:1px solid var(--line);
-  border-radius:var(--radius);padding:5px}
-nav button{flex:1;font:inherit;font-size:16px;padding:9px 6px;border:0;border-radius:10px;
-  background:transparent;color:var(--soft);cursor:pointer}
+nav{display:flex;gap:4px;background:var(--card);border:1px solid var(--line);
+  border-radius:19px;padding:4px;box-shadow:0 3px 12px rgba(0,0,0,.18)}
+nav button{font:inherit;font-size:14px;padding:6px 13px;border:0;border-radius:15px;
+  background:transparent;color:var(--soft);cursor:pointer;white-space:nowrap}
 nav button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:var(--pad);margin:0 0 16px}
 .tinyrow{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 14px;margin:10px 0 0;
@@ -136,15 +136,25 @@ body.show-notes .passage .tn-ref{font-weight:700;margin-right:6px}
 .memo textarea{min-height:16vh;font-size:16px}
 footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
   text-align:left;padding:0 0 8px}
-.fab{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:18;display:flex;gap:8px;align-items:center}
-.fab button{font:inherit;font-size:22px;font-weight:600;width:46px;height:46px;border:1px solid var(--line);
+/* left:50% leaves a fixed element only half the viewport to size itself in, so
+   the row wrapped into three. Say the width out loud instead. */
+.fab{position:fixed;left:50%;transform:translateX(-50%);bottom:12px;z-index:18;
+  display:flex;flex-direction:column;gap:7px;align-items:center;
+  width:max-content;max-width:calc(100vw - 16px)}
+.fabrow{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:center}
+.wrap{padding-bottom:130px}
+.fab .fabrow>button{font:inherit;font-size:21px;font-weight:600;width:40px;height:40px;border:1px solid var(--line);
   border-radius:50%;background:var(--card);color:var(--ink);cursor:pointer;
   box-shadow:0 3px 12px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center}
-.fab{gap:7px}
-.fab button.wide{width:auto;height:46px;border-radius:23px;padding:0 15px;font-size:15px;
+.fab button.wide{width:auto;height:40px;border-radius:20px;padding:0 13px;font-size:15px;
   background:var(--accent);color:var(--accent-ink);border:0;font-weight:700}
 .fab button.plain{background:var(--card);color:var(--ink);border:1px solid var(--line);font-weight:600}
 .fab button:disabled{opacity:.35;cursor:default}
+#snagPanel{left:50%;right:auto;bottom:auto;top:50%;transform:translate(-50%,-50%);
+  width:min(340px,90vw);border:1px solid var(--line);border-radius:16px;max-height:none;
+  box-shadow:0 8px 30px rgba(0,0,0,.3)}
+#snagPanel textarea{min-height:5.2em;flex:none}
+#snagPanel .prompts{display:none}
 .memo{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--card);
   border-top:1px solid var(--line);border-radius:16px 16px 0 0;padding:14px 16px 16px;
   box-shadow:0 -6px 24px rgba(0,0,0,.22);max-height:70vh;display:flex;flex-direction:column}
@@ -173,11 +183,6 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
 <body>
 <div class="wrap">
 
-<nav role="tablist">
-  <button role="tab" id="tab-btn-today" aria-selected="true" data-tab="today">Today</button>
-  <button role="tab" id="tab-btn-journal" aria-selected="false" data-tab="journal">Journal</button>
-  <button role="tab" id="tab-btn-settings" aria-selected="false" data-tab="settings">Settings</button>
-</nav>
 
 <!-- ============================= TODAY ============================= -->
 <section id="tab-today">
@@ -354,10 +359,19 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
 <!-- Follows you down the chapter, so moving on or jotting something never
      means scrolling back up. -->
 <div class="fab" id="fab">
-  <button id="fabPrev" aria-label="Previous chapter" title="Previous chapter">&#8249;</button>
-  <button id="fabNext" aria-label="Next chapter" title="Next chapter">&#8250;</button>
-  <button id="fabMemo" class="wide" aria-label="Quick note">Note</button>
-  <button id="fabAll" class="wide plain" aria-label="Go to all the writing boxes">Boxes</button>
+  <div class="fabrow">
+    <button id="fabUp" aria-label="Up the page" title="Up the page">&#8963;</button>
+    <button id="fabPrev" aria-label="Previous chapter" title="Previous chapter">&#8249;</button>
+    <button id="fabNext" aria-label="Next chapter" title="Next chapter">&#8250;</button>
+    <button id="fabDown" aria-label="Down the page" title="Down the page">&#8964;</button>
+    <button id="fabMemo" class="wide" aria-label="Quick note">Note</button>
+    <button id="fabAll" class="wide plain" aria-label="Go to all the writing boxes">Boxes</button>
+  </div>
+  <nav role="tablist">
+    <button role="tab" id="tab-btn-today" aria-selected="true" data-tab="today">Today</button>
+    <button role="tab" id="tab-btn-journal" aria-selected="false" data-tab="journal">Journal</button>
+    <button role="tab" id="tab-btn-settings" aria-selected="false" data-tab="settings">Settings</button>
+  </nav>
 </div>
 
 <div class="memo hide" id="snagPanel" role="dialog" aria-label="Report a problem">
@@ -365,7 +379,7 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
     <b>What is wrong?</b>
     <button id="snagSend">Send</button>
   </div>
-  <textarea id="snagText" placeholder="Plainly, in your words. &ldquo;The listen button stops halfway.&rdquo; &ldquo;Text too small on the journal.&rdquo; It goes to your Notion list."></textarea>
+  <textarea id="snagText" placeholder="In your words. It goes to your Notion list."></textarea>
   <div class="memo-foot">
     <select id="snagWhere" style="width:auto;font-size:14px;padding:6px 8px">
       <option value="Today">Today screen</option>
@@ -1377,6 +1391,13 @@ function showTab(name){
   if (name === "journal") renderList();
   if (typeof fabRefresh === "function") fabRefresh();
 }
+/* Up and down move a screenful at a time. She asked for them to just be there. */
+function pageBy(dir){
+  window.scrollBy({ top: dir * Math.round(window.innerHeight * 0.8), behavior: "smooth" });
+}
+document.getElementById("fabUp").addEventListener("click", function(){ pageBy(-1); });
+document.getElementById("fabDown").addEventListener("click", function(){ pageBy(1); });
+
 document.querySelectorAll("nav button").forEach(function(b){
   b.addEventListener("click", function(){ saveEntry(false); showTab(b.dataset.tab); });
 });
@@ -1743,7 +1764,11 @@ let readAt = 0;
 
 function showPlayer(on){
   document.getElementById("player").classList.toggle("hide", !on);
-  document.getElementById("listenBtn").textContent = on ? "reading" : "listen";
+  /* She asked for an icon, so it stays an icon - the speaker becomes a stop
+     square while it is reading, and never turns into the word "reading". */
+  const lb = document.getElementById("listenBtn");
+  lb.textContent = on ? "\u23F9\uFE0F" : "\uD83D\uDD0A";
+  lb.title = lb.ariaLabel = on ? "Stop reading" : "Read it aloud";
 }
 
 function stopListening(){
@@ -1869,7 +1894,7 @@ function applyType(){
    the journal uses. Held on the device until they get through, so a note made
    with no signal is not lost.
 ------------------------------------------------------------------------- */
-const APP_VERSION = "v26";
+const APP_VERSION = "v27";
 
 function snags(){ return jget("snags", []); }
 
@@ -1940,7 +1965,11 @@ function fabRefresh(){
   const onToday = !document.getElementById("tab-today").classList.contains("hide");
   const memoOpen = !document.getElementById("memoPanel").classList.contains("hide");
   const snagUp = !document.getElementById("snagPanel").classList.contains("hide");
-  document.getElementById("fab").classList.toggle("hide", !onToday || memoOpen || snagUp);
+  /* The bar carries the tabs now, so it stays up on every screen - it only gets
+     out of the way when a writing panel is open over it. */
+  document.getElementById("fab").classList.toggle("hide", memoOpen || snagUp);
+  /* The chapter arrows mean nothing off the Today screen. Hide that row only. */
+  document.querySelector(".fab .fabrow").classList.toggle("hide", !onToday);
   if (!onToday) return;
 
   /* An arrow that leads nowhere is worse than no arrow, so say where it goes. */
