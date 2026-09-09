@@ -205,7 +205,7 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
   </div>
 
   <div class="card" id="writeCard">
-    <label class="check"><input type="checkbox" id="fDone"> I read it today</label>
+    <label class="check"><input type="checkbox" id="fDone"> I read it today <span class="hint" style="font-weight:400">(ticks itself once it syncs)</span></label>
 
     <label for="fSummary">My summary of this chapter</label>
     <textarea id="fSummary" class="taller" placeholder=""></textarea>
@@ -1165,7 +1165,18 @@ async function syncNow(loud){
     for (let i = 0; i < waiting.length; i += SYNC_BATCH){
       const batch = waiting.slice(i, i + SYNC_BATCH);
       await postToSync({ app:"daily-chapter", version:1, entries: batch.map(forSending) });
-      batch.forEach(function(e){ if (entries[e.date]) entries[e.date].synced = e.updated; });
+      batch.forEach(function(e){
+        const kept = entries[e.date];
+        if (!kept) return;
+        kept.synced = e.updated;
+        /* A day that reached Notion has been read. Ticking a box to say so
+           afterwards is busywork - unless she deliberately unticked it, which
+           is a decision the app does not overrule. */
+        if (!kept.done && !kept.doneByHand){
+          kept.done = true;
+          if (e.date === viewDate) document.getElementById("fDone").checked = true;
+        }
+      });
       sent += batch.length;
       jset("entries", entries);
     }
@@ -1850,7 +1861,7 @@ function applyType(){
    the journal uses. Held on the device until they get through, so a note made
    with no signal is not lost.
 ------------------------------------------------------------------------- */
-const APP_VERSION = "v23";
+const APP_VERSION = "v24";
 
 function snags(){ return jget("snags", []); }
 
