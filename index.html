@@ -1850,7 +1850,7 @@ function applyType(){
    the journal uses. Held on the device until they get through, so a note made
    with no signal is not lost.
 ------------------------------------------------------------------------- */
-const APP_VERSION = "v22";
+const APP_VERSION = "v23";
 
 function snags(){ return jget("snags", []); }
 
@@ -1862,11 +1862,22 @@ async function sendSnags(loud){
     return;
   }
   try {
-    await postToSync({ app:"daily-chapter", version:1, kind:"snag", snags: waiting });
+    const reply = await postToSync({ app:"daily-chapter", version:1, kind:"snag", snags: waiting });
+
+    /* An older script does not know what a snag is. It accepts the message,
+       discards it and answers "fine" - so "ok" alone is not proof of delivery.
+       Insist it says how many it wrote, and that the number matches. */
+    if (reply.wrote !== waiting.length){
+      syncStatus("The script in your Google account is an older version and cannot take " +
+                 "these yet. Your " + waiting.length + " note" + (waiting.length === 1 ? "" : "s") +
+                 " are kept here. Paste the new Code.gs and deploy a new version.");
+      if (loud) toast("Kept here - the script needs updating", null, null);
+      return;
+    }
     const all = snags();
     all.forEach(function(s){ if (!s.sent) s.sent = new Date().toISOString(); });
     jset("snags", all);
-    if (loud) toast("Sent to your Notion list", null, null);
+    if (loud) toast(waiting.length + " sent", null, null);
   } catch (err) {
     if (loud) toast("Kept here - it will go when there is signal", null, null);
   }
