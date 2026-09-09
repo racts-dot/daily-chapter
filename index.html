@@ -29,17 +29,19 @@ body{
   /* Start about 3 cm down. On an installed app the status bar sits over the
      top of the page, so take the notch into account rather than guessing. */
   padding-top:max(2.4cm, calc(env(safe-area-inset-top, 0px) + 1.1cm))}
-nav{display:flex;gap:22px;margin:2px 0 16px;padding:0}
-nav button{font:inherit;font-size:15px;padding:4px 0;border:0;background:transparent;
-  color:var(--soft);cursor:pointer;border-bottom:2px solid transparent}
-nav button[aria-selected="true"]{color:var(--ink);font-weight:700;border-bottom-color:var(--accent)}
+nav{display:flex;gap:6px;margin:2px 0 16px;background:var(--card);border:1px solid var(--line);
+  border-radius:var(--radius);padding:5px}
+nav button{flex:1;font:inherit;font-size:16px;padding:9px 6px;border:0;border-radius:10px;
+  background:transparent;color:var(--soft);cursor:pointer}
+nav button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:var(--pad);margin:0 0 16px}
 .tinyrow{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 14px;margin:10px 0 0;
   font-size:13px;color:var(--soft)}
 .tinyrow .when{flex:1 0 auto;white-space:nowrap}
 .link{font:inherit;font-size:13px;background:transparent;border:0;padding:0;color:var(--accent);
   text-decoration:underline;cursor:pointer}
-.ref{font-size:22px;line-height:1.2;margin:0 0 2px;font-weight:700;letter-spacing:.2px}
+.icon{font-size:19px;line-height:1;background:transparent;border:0;padding:2px 4px;cursor:pointer}
+.ref{font-size:30px;line-height:1.15;margin:0 0 4px;font-weight:700;letter-spacing:.2px}
 .sub{color:var(--soft);font-size:15px;margin:0 0 12px}
 .bar{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin:10px 0 4px}
 .bar i{display:block;height:100%;background:var(--accent)}
@@ -127,11 +129,14 @@ body.show-notes .passage .tn-ref{font-weight:700;margin-right:6px}
 .card.questions .prompts{background:transparent;border:0;padding:0 0 0 20px;margin:0}
 .summary{float:right;width:52%;margin:0 0 10px 14px;font-size:14px;padding:10px 12px}
 .summary ul{padding-left:16px}
+/* On a narrow phone a floated box squeezes the section headings into a
+   four-line ribbon. Below 480px it sits full width instead, still small. */
+@media (max-width:480px){ .summary{float:none;width:auto;margin:0 0 12px} }
 .memo{max-height:52vh;padding:12px 14px 14px}
 .memo textarea{min-height:16vh;font-size:16px}
 footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
   text-align:left;padding:0 0 8px}
-.fab{position:fixed;right:12px;bottom:14px;z-index:18;display:flex;gap:8px;align-items:center}
+.fab{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:18;display:flex;gap:8px;align-items:center}
 .fab button{font:inherit;font-size:22px;font-weight:600;width:46px;height:46px;border:1px solid var(--line);
   border-radius:50%;background:var(--card);color:var(--ink);cursor:pointer;
   box-shadow:0 3px 12px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center}
@@ -183,11 +188,8 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
     <div id="behindNotice" class="notice hide"></div>
     <p class="tinyrow">
       <span class="when" id="whenLabel"></span>
-      <button class="link" id="listenBtn">listen</button>
-      <button class="link" id="saveDayBtn">save notes</button>
-      <button class="link" id="saveChapterBtn">save chapter</button>
-      <button class="link" id="todayBtn">today</button>
-      <button class="link" id="snagBtn">something's wrong</button>
+      <button class="icon" id="listenBtn" title="Read it aloud" aria-label="Read it aloud">&#128266;</button>
+      <button class="icon" id="snagBtn" title="Something's wrong" aria-label="Something's wrong">&#9888;&#65039;</button>
       <button class="link hide" id="prevDay" aria-label="Previous day">&#8249;</button>
       <button class="link hide" id="nextDay" aria-label="Next day">&#8250;</button>
     </p>
@@ -296,6 +298,11 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
     <div class="row">
       <button class="btn ghost" id="startToday">Start the plan again from today</button>
       <button class="btn ghost" id="reloadText">Reload today's chapter</button>
+      <button class="btn ghost" id="todayBtn">Back to today</button>
+    </div>
+    <div class="row">
+      <button class="btn ghost" id="saveDayBtn">Save this day's notes</button>
+      <button class="btn ghost" id="saveChapterBtn">Save this chapter</button>
     </div>
   </div>
 
@@ -348,9 +355,9 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
      means scrolling back up. -->
 <div class="fab" id="fab">
   <button id="fabPrev" aria-label="Previous chapter" title="Previous chapter">&#8249;</button>
+  <button id="fabNext" aria-label="Next chapter" title="Next chapter">&#8250;</button>
   <button id="fabMemo" class="wide" aria-label="Quick note">Note</button>
   <button id="fabAll" class="wide plain" aria-label="Go to all the writing boxes">Boxes</button>
-  <button id="fabNext" aria-label="Next chapter" title="Next chapter">&#8250;</button>
 </div>
 
 <div class="memo hide" id="snagPanel" role="dialog" aria-label="Report a problem">
@@ -557,7 +564,7 @@ function daysBetween(a, b){ return Math.round((toDate(b) - toDate(a)) / 86400000
    short one. */
 function shortDate(s){
   const d = toDate(s);
-  return d.toLocaleDateString(undefined, { day:"numeric", month:"short" });
+  return d.toLocaleDateString(undefined, { weekday:"short", day:"numeric", month:"short" });
 }
 function prettyDate(s){
   const d = toDate(s);
@@ -1260,7 +1267,8 @@ function renderProgress(){
   const bar = document.getElementById("progressBar");
 
   const isToday = viewDate === todayStr();
-  document.getElementById("whenLabel").textContent = isToday ? "Today" : shortDate(viewDate);
+  document.getElementById("whenLabel").textContent =
+    (isToday ? "Today · " : "") + shortDate(viewDate);
 
   if (info.state === "before"){
     refEl.textContent = "Not started yet";
@@ -1861,7 +1869,7 @@ function applyType(){
    the journal uses. Held on the device until they get through, so a note made
    with no signal is not lost.
 ------------------------------------------------------------------------- */
-const APP_VERSION = "v24";
+const APP_VERSION = "v26";
 
 function snags(){ return jget("snags", []); }
 
