@@ -319,6 +319,7 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
            autocomplete="off" spellcheck="false">
     <div class="row">
       <button class="btn ghost" id="syncNow">Send everything now</button>
+      <button class="btn ghost" id="syncPull">Bring it all back from the Sheet</button>
       <button class="btn ghost" id="syncTest">Test the address</button>
     </div>
     <p class="sub">Every day you write is sent to your Google Sheet and your Notion, as
@@ -1173,6 +1174,61 @@ async function postToSync(payload){
   return reply;
 }
 
+/* The other direction. A new phone starts empty, so this reads her writing back
+   out of the Sheet and merges it in - newest edit of each day wins, and nothing
+   she has typed on THIS device is thrown away. */
+async function pullFromSheet(loud){
+  if (!settings.syncUrl){ if (loud) toast("No sync address set yet", null, null); return 0; }
+  let reply;
+  try {
+    reply = await postToSync({ kind: "pull" });
+  } catch (err){
+    if (loud) toast("Could not read the Sheet - " + err.message, null, null);
+    return 0;
+  }
+  /* An older deployment does not know the word "pull". It answers ok anyway, so
+     believing "ok" would look like an empty journal instead of stale code. */
+  if (reply.kind !== "pull" || !Array.isArray(reply.entries)){
+    if (loud) alert("Your postbox is still running the old code, so it cannot "
+      + "read the Sheet back yet.\n\nPaste the new Code.gs into the script, then "
+      + "Deploy \u2192 Manage deployments \u2192 pencil \u2192 New version.");
+    return 0;
+  }
+  let added = 0, updated = 0;
+  reply.entries.forEach(function(row){
+    const d = String(row.date || "").slice(0, 10);
+    if (!/^\d{4}-\d\d-\d\d$/.test(d)) return;
+    const incoming = {
+      date: d,
+      ref: String(row.reference || "").replace(/^Psalm /, "Psalms "),
+      plan: settings.plan,
+      done: !!row.read,
+      verse: String(row.verse || ""), summary: String(row.summary || ""),
+      learnt: String(row.learnt || ""), apply: String(row.apply || ""),
+      prayer: String(row.prayer || ""),
+      tags: String(row.tags || "").split(",").map(function(t){ return t.trim(); }).filter(Boolean),
+      verses: String(row.versesChosen || "").split(",").map(function(v){ return v.trim(); }).filter(Boolean),
+      quote: "", created: null, updated: String(row.updated || "")
+    };
+    const mine = entries[d];
+    if (!mine){ entries[d] = incoming; added++; }
+    else if ((incoming.updated || "") > (mine.updated || "")){ entries[d] = incoming; updated++; }
+  });
+  if (added || updated){
+    jset("entries", entries);
+    /* Everything just read out of the Sheet is already in the Sheet. */
+    Object.keys(entries).forEach(function(d){ if (entries[d].synced === undefined) entries[d].synced = entries[d].updated; });
+    jset("entries", entries);
+    fillSettings(); render(); renderList();
+  }
+  if (loud){
+    alert(added || updated
+      ? "Brought back " + added + " days, updated " + updated + "."
+      : "Nothing new in the Sheet - this device already has it all.");
+  }
+  return added + updated;
+}
+
 async function syncNow(loud){
   if (syncing) return;
   if (!settings.syncUrl){ if (loud) toast("No sync address set yet", null, null); return; }
@@ -1631,6 +1687,7 @@ document.getElementById("setSync").addEventListener("change", function(ev){
   if (url) syncNow(true);
 });
 document.getElementById("syncNow").addEventListener("click", function(){ syncNow(true); });
+document.getElementById("syncPull").addEventListener("click", function(){ pullFromSheet(true); });
 document.getElementById("syncTest").addEventListener("click", async function(){
   if (!settings.syncUrl){ toast("Paste the address first", null, null); return; }
   syncStatus("Testing the address\u2026");
@@ -1894,7 +1951,7 @@ function applyType(){
    the journal uses. Held on the device until they get through, so a note made
    with no signal is not lost.
 ------------------------------------------------------------------------- */
-const APP_VERSION = "v27";
+const APP_VERSION = "v28";
 
 function snags(){ return jget("snags", []); }
 
@@ -2055,9 +2112,20 @@ fabRefresh();
   jset("settings", settings);
   fillSettings();
   syncNow(true);
+  /* Set up by link is exactly the new-device case, so go and get her writing. */
+  pullFromSheet(true);
 })();
 
 if (settings.syncUrl) setTimeout(function(){ syncNow(false); sendSnags(false); }, 1500);
+
+/* A fresh device with an address but no writing is almost certainly her on a new
+   phone, not a new diary. Offer it rather than doing it silently. */
+if (settings.syncUrl && !Object.keys(entries).length){
+  setTimeout(function(){
+    if (Object.keys(entries).length) return;
+    if (window.confirm("This device has none of your writing yet.\n\nBring it back from your Google Sheet?")) pullFromSheet(true);
+  }, 2200);
+}
 </script>
 </body>
 </html>

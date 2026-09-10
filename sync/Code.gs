@@ -18,6 +18,11 @@
  *                  land in a Snags tab in the Sheet
  */
 
+/* Bumped whenever this file changes in a way the app must be able to see.
+   The app reads it from the test reply, so "I deployed but did not paste" is
+   caught instead of looking like a working setup. */
+var SCRIPT_VERSION = 2;
+
 var SHEET_NAME = 'Journal';
 var NOTION_VERSION = '2022-06-28';
 
@@ -40,7 +45,14 @@ function doPost(e) {
       checks.push(sheet() ? 'sheet reachable' : 'SHEET NOT REACHABLE');
       checks.push(notionToken() ? 'Notion key present' : 'Notion not set up (Sheets only)');
       checks.push(prop('NOTION_SNAG_DB') ? 'snag list connected' : 'snags go to the Sheet only');
-      return reply({ ok: true, wrote: checks.join(', ') });
+      return reply({ ok: true, wrote: checks.join(', '), script: SCRIPT_VERSION });
+    }
+
+    /* Reading BACK out of the Sheet. This is what makes a new phone able to
+       get her writing back without her typing any of it again. */
+    if (body.kind === 'pull') {
+      return reply({ ok: true, kind: 'pull', script: SCRIPT_VERSION,
+                     entries: readFromSheet() });
     }
 
     if (body.kind === 'snag') {
@@ -100,6 +112,22 @@ function sheet() {
   return tab;
 }
 
+/* Sheets parses '2026-09-09' into a Date object on the way in. String()ing that
+   gives 'Tue Sep 09 2026 ...', whose first ten characters are 'Tue Sep 09' - so
+   the old comparison against '2026-09-09' could never match, and every save
+   appended a new row instead of replacing the day. Her Journal tab has 17 rows
+   for one day because of this. Compare on a real date key. */
+function dateKey(value, tab) {
+  /* Duck-typed on purpose. `value instanceof Date` is false for a Date made in
+     another JavaScript realm, which is how the test harness feeds cells in -
+     and it is the check that quietly let this bug through a green test run. */
+  if (value && typeof value.getTime === 'function' && !isNaN(value.getTime())) {
+    var zone = tab ? tab.getParent().getSpreadsheetTimeZone() : Session.getScriptTimeZone();
+    return Utilities.formatDate(value, zone, 'yyyy-MM-dd');
+  }
+  return String(value || '').slice(0, 10);
+}
+
 function rowFor(entry) {
   return COLUMNS.map(function (key) {
     var value = entry[key];
@@ -114,11 +142,34 @@ function writeToSheet(entry) {
   var dates = last > 1 ? tab.getRange(2, 1, last - 1, 1).getValues() : [];
   var row = 0;
   for (var i = 0; i < dates.length; i++) {
-    if (String(dates[i][0]).slice(0, 10) === entry.date) { row = i + 2; break; }
+    if (dateKey(dates[i][0], tab) === entry.date) { row = i + 2; break; }
   }
   var values = [rowFor(entry)];
   if (row) tab.getRange(row, 1, 1, values[0].length).setValues(values);
   else tab.appendRow(values[0]);
+}
+
+/* Every row, newest per date. The duplicate rows already in the Sheet are left
+   alone - nothing here deletes her data - but only the latest edit of each day
+   is handed back, judged by the Last edited column. */
+function readFromSheet() {
+  var tab = sheet();
+  var last = tab.getLastRow();
+  if (last < 2) return [];
+  var rows = tab.getRange(2, 1, last - 1, COLUMNS.length).getValues();
+  var best = {};
+  for (var i = 0; i < rows.length; i++) {
+    var out = {};
+    for (var c = 0; c < COLUMNS.length; c++) out[COLUMNS[c]] = rows[i][c];
+    out.date = dateKey(out.date, tab);
+    if (!out.date) continue;
+    out.read = String(out.read).toLowerCase() === 'yes';
+    out.updated = out.updated instanceof Date ? out.updated.toISOString()
+                                              : String(out.updated || '');
+    var held = best[out.date];
+    if (!held || String(out.updated) >= String(held.updated)) best[out.date] = out;
+  }
+  return Object.keys(best).sort().map(function (d) { return best[d]; });
 }
 
 /* -------------------------------- snags --------------------------------- */
