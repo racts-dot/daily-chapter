@@ -526,7 +526,12 @@ const NLT_BOOK_NAMES = {"Song of Solomon":"Song of Songs"};
 
 /* Tyndale allow 50 verses per request without a key, and 500 requests a day.
    Long chapters are therefore asked for in 50-verse pieces. */
-const NLT_CHUNK = 50;
+/* Tyndale allow 50 verses per request anonymously and 500 once you have a key.
+   Asking for 500 without one is refused, so the size follows the key rather
+   than being a single constant. */
+const NLT_CHUNK_ANON = 50;
+const NLT_CHUNK_KEYED = 500;
+function nltChunk(){ return settings.nltKey ? NLT_CHUNK_KEYED : NLT_CHUNK_ANON; }
 
 const NLT_COPYRIGHT = "Scripture quotations are taken from the Holy Bible, " +
   "New Living Translation, copyright \u00a9 1996, 2004, 2015 by Tyndale House Foundation. " +
@@ -667,9 +672,10 @@ async function fetchFromNlt(ref){
   const doc = document.implementation.createHTMLDocument("");
   const holder = doc.createElement("div");
   let from = 1, lastSeen = 0, got = 0;
+  const size = nltChunk();
 
   for (let round = 0; round < 6; round++){
-    const to = from + NLT_CHUNK - 1;
+    const to = from + size - 1;
     const url = "https://api.nlt.to/api/passages?ref=" + encodeURIComponent(nltRef(ref, from, to)) +
                 "&version=" + encodeURIComponent(settings.translation) +
                 "&key=" + encodeURIComponent(settings.nltKey || "TEST");
@@ -1951,7 +1957,7 @@ function applyType(){
    the journal uses. Held on the device until they get through, so a note made
    with no signal is not lost.
 ------------------------------------------------------------------------- */
-const APP_VERSION = "v28";
+const APP_VERSION = "v29";
 
 function snags(){ return jget("snags", []); }
 

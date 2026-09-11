@@ -152,12 +152,22 @@ def check(app_dir, live=False):
     ):
         if needle not in html:
             fails.append(why)
-    chunk = re.search(r"NLT_CHUNK\s*=\s*(\d+)", html)
-    if not chunk:
-        fails.append("the NLT request size is not set anywhere")
-    elif int(chunk.group(1)) > 50:
-        fails.append("NLT requests ask for %s verses at a time; Tyndale allow 50 without a key"
-                     % chunk.group(1))
+    # Tyndale's two ceilings. Both are checked, because a key raises one of them
+    # and neither may be exceeded.
+    anon = re.search(r"NLT_CHUNK_ANON\s*=\s*(\d+)", html)
+    keyed = re.search(r"NLT_CHUNK_KEYED\s*=\s*(\d+)", html)
+    if not anon or not keyed:
+        fails.append("the NLT request sizes are not both set anywhere")
+    else:
+        if int(anon.group(1)) > 50:
+            fails.append("without a key NLT requests ask for %s verses at a time; "
+                         "Tyndale allow 50" % anon.group(1))
+        if int(keyed.group(1)) > 500:
+            fails.append("with a key NLT requests ask for %s verses at a time; "
+                         "Tyndale allow 500" % keyed.group(1))
+    # The size is worthless if it is not actually tied to whether a key is set.
+    if not re.search(r"function nltChunk\(\)\s*\{[^}]*settings\.nltKey", html):
+        fails.append("the NLT request size is not chosen from whether a key is set")
 
     # Third-party HTML is injected into the page, so the cleaner must be there.
     for needle, why in (
@@ -302,7 +312,12 @@ def selftest():
         ("the Tyndale copyright line removed",
          lambda s: s.replace("New Living Translation, copyright", "New Living Translation, ")),
         ("the 50-verse anonymous limit raised",
-         lambda s: s.replace("NLT_CHUNK = 50", "NLT_CHUNK = 500")),
+         lambda s: s.replace("NLT_CHUNK_ANON = 50", "NLT_CHUNK_ANON = 500")),
+        ("the 500-verse keyed limit raised",
+         lambda s: s.replace("NLT_CHUNK_KEYED = 500", "NLT_CHUNK_KEYED = 5000")),
+        ("the request size no longer following the key",
+         lambda s: s.replace("return settings.nltKey ? NLT_CHUNK_KEYED : NLT_CHUNK_ANON;",
+                             "return NLT_CHUNK_KEYED;")),
         ("the HTML cleaner letting <script> through",
          lambda s: s.replace("SCRIPT:1,", "")),
         ("verse underlining removed",
