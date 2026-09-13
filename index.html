@@ -158,6 +158,16 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
 .memo{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--card);
   border-top:1px solid var(--line);border-radius:16px 16px 0 0;padding:14px 16px 16px;
   box-shadow:0 -6px 24px rgba(0,0,0,.22);max-height:70vh;display:flex;flex-direction:column}
+/* Floating: a small card she can shove anywhere on the page, instead of a sheet
+   across the bottom. Dragged by its title bar; where she leaves it is remembered. */
+.memo.float{left:auto;top:auto;right:12px;bottom:96px;width:min(300px,calc(100vw - 24px));
+  max-height:44vh;border-radius:14px;border:1px solid var(--line);
+  box-shadow:0 10px 34px rgba(0,0,0,.28)}
+.memo.float .memo-head{cursor:grab;touch-action:none}
+.memo.float .memo-head.dragging{cursor:grabbing}
+.memo.float textarea{min-height:14vh;font-size:16px}
+.memo-head .pin{font-size:14px;font-weight:600;padding:5px 10px;background:transparent;
+  border:1px solid var(--line);color:var(--soft)}
 .memo-head{display:flex;align-items:center;gap:12px;margin-bottom:8px}
 .memo-head b{font-size:16px;flex:1}
 .memo-head button{font:inherit;font-size:16px;font-weight:700;border:0;border-radius:10px;
@@ -327,6 +337,15 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
     overwrites rather than doubling up. With no signal it waits and tries later.</p>
   </div>
 
+  <div class="card">
+    <h3 style="margin:0 0 6px;font-size:17px">The reading voice</h3>
+    <p class="sub">The phone's own voice, so it costs nothing and works with no signal.
+    The best one on this device is picked for you; change it here if you prefer another.</p>
+    <label for="setVoice">Voice</label>
+    <select id="setVoice"></select>
+    <p class="sub" id="voiceNote"></p>
+  </div>
+
   <div class="card" id="nltCard">
     <h3 style="margin:0 0 6px;font-size:17px">NLT key <span class="hint" style="font-weight:400">&mdash; you almost certainly do not need one</span></h3>
     <p class="sub">The NLT works with no key at all, up to 500 chapters a day. That is
@@ -359,6 +378,15 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
 
 <!-- Follows you down the chapter, so moving on or jotting something never
      means scrolling back up. -->
+<div id="pullNote" aria-live="polite" style="position:fixed;left:0;right:0;top:0;z-index:30;
+  display:none;justify-content:center;pointer-events:none">
+  <span style="margin-top:max(8px,env(safe-area-inset-top,0px));background:var(--accent);
+    color:var(--accent-ink);font-size:14px;padding:6px 14px;border-radius:999px">Pull to reload</span>
+</div>
+
+<button id="speakSel" class="btn" style="position:absolute;z-index:31;display:none;
+  font-size:14px;padding:6px 12px;border-radius:999px">Speak this</button>
+
 <div class="fab" id="fab">
   <div class="fabrow">
     <button id="fabUp" aria-label="Up the page" title="Up the page">&#8963;</button>
@@ -398,6 +426,7 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
 <div class="memo hide" id="memoPanel" role="dialog" aria-label="Write a note">
   <div class="memo-head">
     <b id="memoTitle">Notes</b>
+    <button class="pin" id="memoFloat" title="Float this note">Float</button>
     <button id="memoClose">Done</button>
   </div>
   <textarea id="memoText" placeholder=""></textarea>
@@ -1591,6 +1620,90 @@ document.getElementById("prevDay").addEventListener("click", function(){ goTo(sh
 document.getElementById("nextDay").addEventListener("click", function(){ goTo(shift(viewDate,  1)); });
 document.getElementById("todayBtn").addEventListener("click", function(){ goTo(todayStr()); });
 document.getElementById("reloadText").addEventListener("click", function(){ loadPassage(true); });
+
+/* ----------------------------- pull to reload ----------------------------
+   Only from the very top of the Today tab, so it never fights a scroll that
+   is already under way. The chapter is re-fetched, not just re-drawn.
+------------------------------------------------------------------------- */
+(function(){
+  const ARM = 12;     /* how far down before the hint shows */
+  const TRIP = 70;    /* how far down before it actually reloads */
+  let y0 = 0, pulling = false;
+  const note = function(){ return document.getElementById("pullNote"); };
+
+  function onToday(){
+    return !document.getElementById("tab-today").classList.contains("hide")
+        && document.getElementById("memoPanel").classList.contains("hide")
+        && document.getElementById("snagPanel").classList.contains("hide");
+  }
+
+  document.addEventListener("touchstart", function(e){
+    pulling = false;
+    if (e.touches.length !== 1 || !onToday()) return;
+    if ((window.scrollY || document.documentElement.scrollTop || 0) > 0) return;
+    y0 = e.touches[0].clientY;
+    pulling = true;
+  }, { passive: true });
+
+  document.addEventListener("touchmove", function(e){
+    if (!pulling) return;
+    const dy = e.touches[0].clientY - y0;
+    note().style.display = dy > ARM ? "flex" : "none";
+    if (dy > TRIP) note().querySelector("span").textContent = "Release to reload";
+    else note().querySelector("span").textContent = "Pull to reload";
+  }, { passive: true });
+
+  document.addEventListener("touchend", function(e){
+    if (!pulling) return;
+    pulling = false;
+    const dy = e.changedTouches[0].clientY - y0;
+    note().style.display = "none";
+    note().querySelector("span").textContent = "Pull to reload";
+    if (dy > TRIP) loadPassage(true);
+  }, { passive: true });
+})();
+
+/* --------------------------- speak what she picked -----------------------
+   Highlighting words puts a Speak this button beside them. Tapping a verse
+   already means "keep it", so the gesture had to be a different one.
+------------------------------------------------------------------------- */
+(function(){
+  const btn = function(){ return document.getElementById("speakSel"); };
+
+  function hide(){ btn().style.display = "none"; }
+
+  function place(){
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed) return hide();
+    const text = sel.toString().trim();
+    const box = document.getElementById("passage");
+    if (text.length < 3 || !box || !box.contains(sel.anchorNode)) return hide();
+
+    const r = sel.getRangeAt(0).getBoundingClientRect();
+    if (!r || (!r.width && !r.height)) return hide();
+    const b = btn();
+    b.style.display = "block";
+    b.style.top  = (r.bottom + window.scrollY + 8) + "px";
+    b.style.left = Math.max(10, Math.min(r.left + window.scrollX, window.innerWidth - 130)) + "px";
+  }
+
+  document.addEventListener("selectionchange", function(){ setTimeout(place, 10); });
+  document.addEventListener("scroll", hide, { passive: true });
+
+  document.getElementById("speakSel").addEventListener("click", function(ev){
+    ev.preventDefault();
+    const text = (window.getSelection() || "").toString().trim();
+    if (!text) return hide();
+    if (!("speechSynthesis" in window)){ toast("This browser cannot read aloud", null, null); return; }
+    window.speechSynthesis.cancel();
+    const say = new SpeechSynthesisUtterance(text);
+    say.rate = settings.rate || 0.95;
+    const chosen = currentVoice();
+    if (chosen){ say.voice = chosen; say.lang = chosen.lang; }
+    window.speechSynthesis.speak(say);
+    hide();
+  });
+})();
 document.getElementById("listenBtn").addEventListener("click", function(){
   if (speaking()) stopListening(); else startListening();
 });
@@ -1616,6 +1729,12 @@ document.getElementById("saveDayBtn").addEventListener("click", function(){
 document.getElementById("saveChapterBtn").addEventListener("click", saveChapter);
 document.getElementById("setFont").addEventListener("change", function(ev){
   settings.font = ev.target.value; jset("settings", settings); applyType();
+});
+
+document.getElementById("setVoice").addEventListener("change", function(ev){
+  voiceURI = ev.target.value;
+  settings.voiceURI = voiceURI;
+  jset("settings", settings);
 });
 document.getElementById("setSize").addEventListener("input", function(ev){
   settings.size = parseInt(ev.target.value, 10); jset("settings", settings); applyType();
@@ -1852,6 +1971,66 @@ document.addEventListener("visibilitychange", function(){
   }
 });
 
+/* Which voice. Same scoring as the desk app, so the two sound alike: anything the
+   maker calls premium or neural first, Australian English ahead of British ahead of
+   American, and the novelty voices pushed to the bottom. */
+let VOICES = [], voiceURI = null;
+
+function voiceScore(v){
+  let n = 0;
+  const nm = (v.name || "") + " " + (v.voiceURI || "");
+  if (/premium|enhanced|natural|neural|siri/i.test(nm)) n += 100;
+  if (/google/i.test(nm)) n += 40;
+  if (/^en-AU/i.test(v.lang)) n += 30;
+  else if (/^en-GB/i.test(v.lang)) n += 22;
+  else if (/^en-US/i.test(v.lang)) n += 14;
+  else if (/^en/i.test(v.lang)) n += 8;
+  else n -= 200;
+  if (v.localService) n += 6;
+  if (/compact|eloquence|novelty|whisper|bells|bubbles|zarvox|trinoids|bahh/i.test(nm)) n -= 140;
+  return n;
+}
+
+function fillVoices(){
+  if (!("speechSynthesis" in window)) return;
+  if (!voiceURI && settings && settings.voiceURI) voiceURI = settings.voiceURI;
+  const all = window.speechSynthesis.getVoices() || [];
+  VOICES = all.filter(function(v){ return /^en/i.test(v.lang); })
+              .sort(function(a, b){ return voiceScore(b) - voiceScore(a); });
+  if (!VOICES.length) VOICES = all.slice();
+
+  const sel = document.getElementById("setVoice");
+  if (sel){
+    sel.innerHTML = VOICES.map(function(v){
+      const up = /premium|enhanced|natural|neural|siri/i.test(v.name) ? " · better" : "";
+      return '<option value="' + v.voiceURI.replace(/"/g, "&quot;") + '">'
+           + v.name + " (" + v.lang + ")" + up + "</option>";
+    }).join("") || '<option value="">Only the built-in voice</option>';
+    if (voiceURI && VOICES.some(function(v){ return v.voiceURI === voiceURI; })) sel.value = voiceURI;
+    else if (VOICES.length) sel.value = VOICES[0].voiceURI;
+  }
+  if (!voiceURI && VOICES.length) voiceURI = VOICES[0].voiceURI;
+
+  const note = document.getElementById("voiceNote");
+  if (note){
+    const best = VOICES[0] && /premium|enhanced|natural|neural|siri/i.test(VOICES[0].name);
+    note.textContent = best
+      ? "Using the best voice on this device."
+      : "This device only has the plain robot voice. On iPhone: Settings, Accessibility, "
+        + "Spoken Content, Voices - download an English voice marked Enhanced or Premium, "
+        + "then reopen this page.";
+  }
+}
+
+function currentVoice(){
+  return VOICES.find(function(v){ return v.voiceURI === voiceURI; }) || null;
+}
+
+if ("speechSynthesis" in window){
+  fillVoices();
+  window.speechSynthesis.onvoiceschanged = fillVoices;
+}
+
 function speaking(){ return window.speechSynthesis && window.speechSynthesis.speaking; }
 
 let readChunks = [];
@@ -1889,6 +2068,8 @@ function speakFrom(index){
   for (let i = index; i < readChunks.length; i++){
     const say = new SpeechSynthesisUtterance(readChunks[i]);
     say.rate = settings.rate || 0.95;
+    const chosen = currentVoice();
+    if (chosen){ say.voice = chosen; say.lang = chosen.lang; }
     say.onstart = (function(at){ return function(){ readAt = at; }; })(i);
     if (i === readChunks.length - 1) say.onend = stopListening;
     window.speechSynthesis.speak(say);
@@ -2089,6 +2270,7 @@ function memoOpen(open){
       info.state === "ok" ? "Notes on " + prettyRef(info.item.ref) : "Notes";
     box.value = document.getElementById("fSummary").value;
     panel.classList.remove("hide");
+    if (typeof window.memoReposition === "function") window.memoReposition();
     box.focus({ preventScroll:true });
   } else {
     panel.classList.add("hide");
@@ -2156,6 +2338,94 @@ document.getElementById("fabAll").addEventListener("click", function(){
   document.getElementById("writeCard").scrollIntoView({ behavior:"smooth", block:"start" });
 });
 document.getElementById("memoClose").addEventListener("click", function(){ memoOpen(false); });
+
+/* ---------------------------- the floating note --------------------------
+   Small, movable, and it stays where she put it. Docked is still there for a
+   long write - the button swaps between the two.
+------------------------------------------------------------------------- */
+(function(){
+  const panel = document.getElementById("memoPanel");
+  const head  = panel.querySelector(".memo-head");
+  const btn   = document.getElementById("memoFloat");
+
+  /* Some embedders report window.innerWidth as 0; documentElement is the fallback,
+     and if BOTH are zero the panel is left where it is rather than flung to 0,0. */
+  function vw(){ return window.innerWidth  || document.documentElement.clientWidth  || 0; }
+  function vh(){ return window.innerHeight || document.documentElement.clientHeight || 0; }
+
+  function clamp(x, y){
+    const w = panel.offsetWidth || 300, h = panel.offsetHeight || 200;
+    const W = vw(), H = vh();
+    if (!W || !H) return [x, y];
+    return [ Math.max(6, Math.min(x, W - w - 6)),
+             Math.max(6, Math.min(y, H - h - 6)) ];
+  }
+
+  /* Moving it switches from the CSS corner to exact pixels. Until she drags it, no
+     number is involved at all - which is why it cannot land in the wrong place on a
+     browser that reports its own size as zero. */
+  function place(x, y, remember){
+    const at = clamp(x, y);
+    panel.style.right = "auto";
+    panel.style.bottom = "auto";
+    panel.style.left = at[0] + "px";
+    panel.style.top  = at[1] + "px";
+    if (remember !== false){
+      settings.memoAt = { x: at[0], y: at[1] };
+      jset("settings", settings);
+    }
+  }
+
+  function setFloating(on){
+    panel.classList.toggle("float", on);
+    btn.textContent = on ? "Dock" : "Float";
+    btn.title = on ? "Put it back at the bottom" : "Float this note";
+    settings.memoFloat = on;
+    jset("settings", settings);
+    if (on){
+      if (typeof window.memoReposition === "function") window.memoReposition();
+    } else {
+      panel.style.left = panel.style.top = panel.style.right = panel.style.bottom = "";
+    }
+  }
+
+  btn.addEventListener("click", function(){ setFloating(!panel.classList.contains("float")); });
+
+  let dx = 0, dy = 0, dragging = false;
+  head.addEventListener("pointerdown", function(e){
+    if (!panel.classList.contains("float") || e.target.closest("button")) return;
+    dragging = true;
+    head.classList.add("dragging");
+    head.setPointerCapture(e.pointerId);
+    const box = panel.getBoundingClientRect();
+    dx = e.clientX - box.left; dy = e.clientY - box.top;
+  });
+  head.addEventListener("pointermove", function(e){
+    if (!dragging) return;
+    place(e.clientX - dx, e.clientY - dy);
+  });
+  ["pointerup", "pointercancel"].forEach(function(ev){
+    head.addEventListener(ev, function(){ dragging = false; head.classList.remove("dragging"); });
+  });
+
+  window.addEventListener("resize", function(){
+    if (!panel.classList.contains("float")) return;
+    const at = settings.memoAt;
+    if (at && typeof at.x === "number" && vw()) place(at.x, at.y, false);
+  });
+
+  /* Floating is what she asked for, so that is the way it starts. Where it goes is
+     worked out when it is first SHOWN - a hidden panel measures zero, and the default
+     corner then collapses to the top left, over the chapter title. */
+  window.memoReposition = function(){
+    if (!panel.classList.contains("float")) return;
+    const at = settings.memoAt;
+    if (at && typeof at.x === "number") place(at.x, at.y, false);  /* where she left it */
+    /* otherwise: leave the CSS corner alone */
+  };
+  panel.classList.toggle("float", settings.memoFloat !== false);
+  btn.textContent = panel.classList.contains("float") ? "Dock" : "Float";
+})();
 document.getElementById("memoAll").addEventListener("click", function(){
   memoOpen(false);
   document.getElementById("fSummary").scrollIntoView({ behavior:"smooth", block:"center" });
