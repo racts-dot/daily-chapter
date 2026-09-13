@@ -8,6 +8,9 @@
 <meta name="theme-color" content="#f7f3ec">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
+<!-- iPhone ignores SVG icons entirely: with only icon.svg, adding this to the
+     home screen took a SCREENSHOT of the page instead of using the icon. -->
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
 :root{
   --bg:#f7f3ec; --card:#fffdf9; --ink:#241f1a; --soft:#6b6157; --line:#e2d9cb;
