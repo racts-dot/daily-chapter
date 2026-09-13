@@ -7,7 +7,7 @@
 <meta name="description" content="One Bible chapter a day, and a place to write what you learnt.">
 <meta name="theme-color" content="#f7f3ec">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#128214;</text></svg>">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
 <style>
 :root{
   --bg:#f7f3ec; --card:#fffdf9; --ink:#241f1a; --soft:#6b6157; --line:#e2d9cb;
@@ -1820,6 +1820,38 @@ function readingText(){
   return copy.textContent.replace(/\s+/g, " ").trim();
 }
 
+/* The phone suspends the built-in voice the moment the page is hidden - that is
+   the browser's rule, not a setting this page can change. So while it reads, a
+   screen wake lock stops the phone locking ITSELF, and coming back resumes what
+   was merely paused. Reading on with the screen off would need a real audio file
+   and a media session, which is not built. */
+let wakeLock = null;
+let wantSpeech = false;
+
+function holdScreenAwake(){
+  if (!("wakeLock" in navigator) || wakeLock) return;
+  navigator.wakeLock.request("screen").then(function(lock){
+    wakeLock = lock;
+    lock.addEventListener("release", function(){ wakeLock = null; });
+  }).catch(function(){ /* refused: low battery, or unsupported. Reading still works. */ });
+}
+
+function releaseScreen(){
+  if (!wakeLock) return;
+  try { wakeLock.release(); } catch (e) {}
+  wakeLock = null;
+}
+
+document.addEventListener("visibilitychange", function(){
+  if (document.hidden || !wantSpeech) return;
+  holdScreenAwake();
+  const pause = document.getElementById("playPause");
+  const shePaused = pause && pause.textContent === "Play";
+  if (!shePaused && window.speechSynthesis && window.speechSynthesis.paused){
+    window.speechSynthesis.resume();
+  }
+});
+
 function speaking(){ return window.speechSynthesis && window.speechSynthesis.speaking; }
 
 let readChunks = [];
@@ -1835,6 +1867,8 @@ function showPlayer(on){
 }
 
 function stopListening(){
+  wantSpeech = false;
+  releaseScreen();
   if (window.speechSynthesis) window.speechSynthesis.cancel();
   readChunks = [];
   readAt = 0;
@@ -1848,6 +1882,8 @@ function stopListening(){
    to - which is why the piece being spoken is tracked. */
 function speakFrom(index){
   if (!window.speechSynthesis) return;
+  wantSpeech = true;
+  holdScreenAwake();
   window.speechSynthesis.cancel();
   readAt = index;
   for (let i = index; i < readChunks.length; i++){
@@ -2062,6 +2098,57 @@ function memoOpen(open){
 
 document.getElementById("fabPrev").addEventListener("click", function(){ goTo(shift(viewDate, -1)); });
 document.getElementById("fabNext").addEventListener("click", function(){ goTo(shift(viewDate,  1)); });
+
+/* --------------------------------- swipe ---------------------------------
+   Drag left for the next chapter, right for the one before - the same two
+   moves as the arrows. Only on the Today tab, only with nothing open over it,
+   and only for a clearly sideways drag, so scrolling the chapter is untouched.
+------------------------------------------------------------------------- */
+(function(){
+  const MIN_X = 60;    /* pixels across before it counts at all */
+  const SLOPE = 1.8;   /* how much more sideways than up-and-down it must be */
+  const MAX_MS = 800;  /* a slow drag is somebody selecting text, not swiping */
+  let x0 = 0, y0 = 0, t0 = 0, tracking = false, justSwiped = false;
+
+  function overSomethingElse(el){
+    return !el || !el.closest || !!el.closest("input, textarea, select, button, a, .memo");
+  }
+  function ready(){
+    return !document.getElementById("tab-today").classList.contains("hide")
+        && document.getElementById("memoPanel").classList.contains("hide")
+        && document.getElementById("snagPanel").classList.contains("hide");
+  }
+
+  document.addEventListener("touchstart", function(e){
+    tracking = false;
+    if (e.touches.length !== 1 || !ready() || overSomethingElse(e.target)) return;
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = Date.now();
+    tracking = true;
+  }, { passive: true });
+
+  document.addEventListener("touchend", function(e){
+    if (!tracking) return;
+    tracking = false;
+    if (Date.now() - t0 > MAX_MS) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - x0, dy = t.clientY - y0;
+    if (Math.abs(dx) < MIN_X || Math.abs(dx) < Math.abs(dy) * SLOPE) return;
+
+    const step = dx < 0 ? 1 : -1;
+    const info = chapterFor(shift(viewDate, step));
+    if (info.state !== "ok"){ toast("Nothing there", null, null); return; }
+    justSwiped = true;
+    setTimeout(function(){ justSwiped = false; }, 400);
+    goTo(shift(viewDate, step));
+  }, { passive: true });
+
+  /* A swipe that began on a verse must not also count as tapping that verse. */
+  document.addEventListener("click", function(e){
+    if (!justSwiped) return;
+    e.stopPropagation();
+    e.preventDefault();
+  }, true);
+})();
 document.getElementById("fabMemo").addEventListener("click", function(){ memoOpen(true); });
 document.getElementById("fabAll").addEventListener("click", function(){
   /* No focus() - putting the cursor in a box makes the keyboard cover the page
