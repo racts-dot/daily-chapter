@@ -73,7 +73,9 @@ svg.map{width:100%;height:auto;display:block;background:var(--map-sea);border-ra
 .dot.home{fill:var(--prophet)}
 .lbl{font-size:.9375rem;fill:var(--ink);paint-order:stroke;stroke:var(--panel);stroke-width:3px;stroke-linejoin:round}
 .legend{display:flex;gap:14px;flex-wrap:wrap;color:var(--soft);font-size:.90625rem;margin:10px 0 0}
-.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}
+.legend i,.place i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}
+.places{margin-top:10px}
+.dlg .ref{overflow-wrap:anywhere}
 dialog{border:1px solid var(--line);border-radius:16px;background:var(--panel);color:var(--ink);padding:0;
   max-width:640px;width:calc(100% - 24px);box-shadow:0 10px 40px rgba(0,0,0,.25)}
 dialog::backdrop{background:rgba(20,15,10,.45)}
@@ -108,6 +110,7 @@ Every name carries the verse it comes from. You can switch between two scholars'
     <button id="prev" aria-label="Previous reign">‹ reign</button>
     <button id="next" aria-label="Next reign">reign ›</button>
     <select id="jump" aria-label="Jump to a reign"></select>
+    <button id="tomap" aria-label="Go to the map">Map</button>
     <span class="row" role="group" aria-label="Chronology">
       <button data-chron="thiele" aria-pressed="true">Thiele</button>
       <button data-chron="galil" aria-pressed="false">Galil</button>
@@ -122,7 +125,7 @@ Every name carries the verse it comes from. You can switch between two scholars'
   <section class="card priests" id="priests"></section>
   <section class="card events wide" id="events"></section>
   <section class="card powers wide" id="powers"></section>
-  <section class="card wide" id="map"></section>
+  <section class="card wide" id="map" tabindex="-1"></section>
 </div>
 
 <footer>
@@ -147,7 +150,7 @@ because the ancient year did not begin in January. The slider places it at the e
 </ul>
 <p>Built offline: this page makes no network requests, so web addresses are printed without their
 "https" prefix and are not links. Every source is listed in full in SOURCES.md beside this file.
-Private build, not published.</p>
+Published as the Kings tab in Daily Read.</p>
 </footer>
 </div>
 <dialog id="card" aria-label="Details"></dialog>
@@ -352,6 +355,7 @@ function powerCard(r, power) {
 
 function openCard(node) {
   const dlg = $("#card");
+  if (dlg.open) dlg.close();
   dlg.innerHTML = "";
   dlg.appendChild(node);
   const bar = el("div", "dlg close");
@@ -517,19 +521,26 @@ function renderPowers(box) {
 }
 
 // ----------------------------------------------------------------------- map
-const MAP_KEY = { cap: "royal city in use", evt: "place in an event nearby", home: "prophet's home town" };
+const MAP_KEY = { cap: "royal city in use", evt: "place in an event nearby", home: "home of a prophet active this year" };
+function capitalNow(k, c, y) {       // a king's royal city, in the part of his reign the verse gives it
+  if (!reigning(k, y)) return false;
+  const n = yearsOf(k).start - y;
+  const from = c.from_offset == null ? 0 : c.from_offset, to = c.to_offset == null ? 1e9 : c.to_offset;
+  return n >= from && n <= to;
+}
+const prophetNow = (p, y) => p.placed && p.active.years[state.chron].from >= y && y >= p.active.years[state.chron].to;
+function highlights(y) {
+  const caps = new Set(), evs = new Set(), homes = new Set();
+  D.kings.kings.forEach(k => (k.capitals || []).forEach(c => { if (capitalNow(k, c, y)) caps.add(c.place); }));
+  D.events.events.filter(e => Math.abs(e.years[state.chron] - y) <= 10).forEach(e => e.places.forEach(p => evs.add(p)));
+  D.prophets.prophets.filter(p => p.home && prophetNow(p, y)).forEach(p => homes.add(p.home.place));
+  return { caps, evs, homes };
+}
+const hotFor = (id, h) => h.caps.has(id) ? "cap" : h.evs.has(id) ? "evt" : h.homes.has(id) ? "home" : "";
 function renderMap(box) {
   const v = D.map_paths.views[state.view];
   const y = state.year;
-  const caps = new Set(), evs = new Set(), homes = new Set();
-  D.kings.kings.filter(k => reigning(k, y)).forEach(k => (k.capitals || []).forEach(c => {
-    const r = yearsOf(k), n = r.start - y;
-    const from = c.from_offset == null ? 0 : c.from_offset, to = c.to_offset == null ? 1e9 : c.to_offset;
-    if (n >= from && n <= to) caps.add(c.place);
-  }));
-  D.events.events.filter(e => Math.abs(e.years[state.chron] - y) <= 10).forEach(e => e.places.forEach(p => evs.add(p)));
-  D.prophets.prophets.filter(p => p.placed && p.home && p.active.years[state.chron].from >= y && y >= p.active.years[state.chron].to)
-    .forEach(p => homes.add(p.home.place));
+  const h = highlights(y);
 
   const esc = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   const k = v.height / (v.lat[1] - v.lat[0]);
@@ -542,7 +553,7 @@ function renderMap(box) {
   D.places.places.forEach(p => {
     const xy = px(p);
     if (xy[0] < -2 || xy[1] < -2 || xy[0] > v.width + 2 || xy[1] > v.height + 2) return;
-    const hot = caps.has(p.id) ? "cap" : evs.has(p.id) ? "evt" : homes.has(p.id) ? "home" : "";
+    const hot = hotFor(p.id, h);
     m += '<circle class="dot ' + hot + '" cx="' + xy[0].toFixed(1) + '" cy="' + xy[1].toFixed(1) + '" r="' + (hot ? 7 : 4) +
          '" tabindex="0" role="button" data-place="' + p.id + '" data-hot="' + hot + '" aria-label="' +
          esc(p.name + (hot ? ", " + MAP_KEY[hot] : "")) + '"><title>' + esc(p.name) + '</title></circle>';
@@ -553,6 +564,7 @@ function renderMap(box) {
   });
   box.innerHTML = "";
   box.appendChild(el("h2", null, "Map"));
+  box.appendChild(el("p", "sub", "The coloured places change with the year. Tap any place to see the events, kings and prophets tied to it. Coloured places also have a button below the map."));
   const row = el("div", "row");
   Object.keys(D.map_paths.views).forEach(key => {
     const b = el("button", state.view === key ? "on" : null, D.map_paths.views[key].label);
@@ -568,11 +580,30 @@ function renderMap(box) {
   svg.innerHTML = m;
   svg.querySelectorAll("circle[data-place]").forEach(c => {
     const p = PL[c.getAttribute("data-place")], hot = c.getAttribute("data-hot");
-    const show = () => openCard(placeCard(p, hot));
+    const show = () => openCard(placeCard(p));
     c.addEventListener("click", show);
     c.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); show(); } });
   });
   box.appendChild(svg);
+  // The dots are a few pixels wide on a phone, too small to tap, so every coloured place is also a button.
+  const hotPlaces = D.places.places.filter(p => hotFor(p.id, h));
+  if (hotPlaces.length) {
+    const pr = el("div", "row places");
+    pr.appendChild(el("span", "ref", "Places in " + fmt(y) + ":"));
+    hotPlaces.forEach(p => {
+      const hot = hotFor(p.id, h);
+      const xy = px(p), off = xy[0] < -2 || xy[1] < -2 || xy[0] > v.width + 2 || xy[1] > v.height + 2;
+      const b = el("button", "place");
+      const i = el("i");
+      i.style.background = hot === "cap" ? "var(--judah)" : hot === "evt" ? "var(--event)" : "var(--prophet)";
+      b.appendChild(i);
+      b.appendChild(document.createTextNode(p.name + (off ? " (off this map)" : "")));
+      b.setAttribute("aria-label", p.name + ", " + MAP_KEY[hot] + (off ? ", not drawn on this map" : ""));
+      b.onclick = () => openCard(placeCard(p));
+      pr.appendChild(b);
+    });
+    box.appendChild(pr);
+  }
   const lg = el("div", "legend");
   [["cap", MAP_KEY.cap], ["evt", MAP_KEY.evt], ["home", MAP_KEY.home], ["", "other place"]]
     .forEach(pair => { const s = el("span"); const i = el("i");
@@ -582,18 +613,73 @@ function renderMap(box) {
   box.appendChild(el("div", "warn", "Borders and territories are not drawn. No openly licensed dataset read for this build gives reign-by-reign borders for Israel, Judah and their neighbours, and drawing them from guesswork would be inventing them. " + D.map_paths.caveat + " Coastline, lakes and rivers: Natural Earth (public domain). Place markers: OpenBible.info Bible Geocoding Data (CC BY 4.0)."));
 }
 
-function placeCard(p, hot) {
+function placeCard(p) {
   const d = el("div", "dlg");
+  const y = state.year;
   d.appendChild(el("h3", null, p.name));
-  d.appendChild(el("div", "ref", "Identified with " + p.identified_with + " · " + p.lat.toFixed(3) + "°N, " + p.lon.toFixed(3) + "°E"));
-  d.appendChild(el("div", "k", "Verse used to pick this place"));
-  d.appendChild(el("div", null, p.verse));
-  d.appendChild(el("div", "k", "Confidence"));
-  d.appendChild(el("div", null, "OpenBible.info score " + p.confidence + " (500 or more is a firm identification)"));
+  d.appendChild(el("div", "ref", "In " + fmt(y) + " (" + (state.chron === "thiele" ? "Thiele" : "Galil") + ")"));
+  const kingdomOf = (k) => k.kingdom === "united" ? "the united monarchy" : k.kingdom === "judah" ? "Judah" : "Israel";
+  let said = 0;
+
+  const here = D.events.events.filter(e => e.places.indexOf(p.id) >= 0)
+    .map(e => ({ e, yr: e.years[state.chron] })).sort((a, b) => b.yr - a.yr);
+  const near = here.filter(o => Math.abs(o.yr - y) <= 10), far = here.filter(o => Math.abs(o.yr - y) > 10);
+  if (near.length) {
+    d.appendChild(el("div", "k", "Events tied to this place, within about ten years"));
+    near.forEach(o => {
+      const w = el("div", "evt");
+      const head = el("div", "nm");
+      head.appendChild(el("span", "yr", fmt(o.yr) + " "));
+      head.appendChild(document.createTextNode(o.e.title));
+      w.appendChild(head);
+      o.e.verses.forEach(v => w.appendChild(verseBlock(v)));
+      d.appendChild(w);
+      said++;
+    });
+  }
+
+  const rulers = [];
+  D.kings.kings.forEach(k => (k.capitals || []).forEach(c => { if (c.place === p.id && capitalNow(k, c, y)) rulers.push({ k, c }); }));
+  if (rulers.length) {
+    d.appendChild(el("div", "k", "A royal city in " + fmt(y)));
+    rulers.forEach(o => {
+      d.appendChild(el("div", null, o.k.name + (o.c.offset_basis ? " — " + o.c.offset_basis : ", " + (o.k.title === "queen" ? "queen" : "king") + " of " + kingdomOf(o.k))));
+      d.appendChild(verseBlock(o.c.verse));
+      const others = (o.k.capitals || []).filter(c => c !== o.c && c.from_offset == null && c.to_offset == null);
+      if (others.length && o.c.from_offset == null && o.c.to_offset == null)
+        d.appendChild(el("div", "warn", "The verses tie " + o.k.name + " to more than one city (" +
+          [o.c].concat(others).map(c => PL[c.place] ? PL[c.place].name : c.place).join(", ") +
+          ") and do not say which years each was used, so all of them are shown for his whole reign."));
+      said++;
+    });
+  }
+
+  const from = D.prophets.prophets.filter(q => q.home && q.home.place === p.id);
+  if (from.length) {
+    d.appendChild(el("div", "k", "Prophets who lived here or came from here"));
+    from.forEach(q => {
+      const now = prophetNow(q, y);
+      d.appendChild(el("div", null, q.name + (now ? " — active around " + fmt(y) : q.placed ? "" : " — the text does not date him")));
+      d.appendChild(verseBlock(q.home.verse));
+      if (now) said++;
+    });
+  }
+
+  if (!said) d.appendChild(el("div", "none", "In " + fmt(y) + ": no event in this app names this place within ten years, no king in this app rules from it that year, and no prophet from it is active."));
+
+  if (far.length) {
+    d.appendChild(el("div", "k", near.length ? "Other years here" : "When something happens here"));
+    far.forEach(o => {
+      const b = personButton(fmt(o.yr) + " · " + o.e.title, o.e.verses.map(v => v.ref).join(" · ") + " — go to that year",
+        () => { setYear(o.yr); openCard(placeCard(p)); });
+      d.appendChild(b);
+    });
+  }
+
+  d.appendChild(el("div", "k", "Where this is"));
+  d.appendChild(el("div", "ref", "Identified with " + p.identified_with + " · " + p.lat.toFixed(3) + "°N, " + p.lon.toFixed(3) + "°E" +
+    " · located by " + p.verse + " · OpenBible.info score " + p.confidence + " (500 or more is a firm identification)"));
   d.appendChild(el("div", "ref", "Coordinates from OpenBible.info Bible Geocoding Data, CC BY 4.0. " + p.url));
-  if (hot === "cap") d.appendChild(el("div", "warn", "Highlighted because a king reigning in " + fmt(state.year) + " is said to rule from here."));
-  if (hot === "evt") d.appendChild(el("div", "warn", "Highlighted because an event within about ten years of " + fmt(state.year) + " happened here."));
-  if (hot === "home") d.appendChild(el("div", "warn", "Highlighted because a prophet active around " + fmt(state.year) + " came from here."));
   return d;
 }
 
@@ -675,6 +761,11 @@ window.addEventListener("DOMContentLoaded", () => {
   $("#jump").addEventListener("change", (e) => { if (e.target.value) { setYear(+e.target.value); e.target.value = ""; } });
   $("#prev").onclick = () => step(-1);
   $("#next").onclick = () => step(1);
+  $("#tomap").onclick = () => {
+    const top = $("#map").getBoundingClientRect().top + window.scrollY - $(".controls").offsetHeight - 8;
+    window.scrollTo({ top: top, behavior: "smooth" });
+    $("#map").focus({ preventScroll: true });
+  };
   document.querySelectorAll("[data-chron]").forEach(b => b.onclick = () => setChron(b.dataset.chron));
   render();
 });
