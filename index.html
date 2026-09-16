@@ -192,7 +192,7 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
 .toast button{font:inherit;font-size:15px;font-weight:700;background:transparent;border:0;
   color:var(--accent-ink);text-decoration:underline;cursor:pointer;padding:0;white-space:nowrap}
 </style>
-<script src="../textsize.js" data-bottom="126"></script><!-- shell daily-chapter-v37: bump with sw.js CACHE -->
+<script src="../textsize.js" data-bottom="126"></script><!-- shell daily-chapter-v38: bump with sw.js CACHE -->
 </head>
 <body>
 <div class="wrap">
@@ -277,6 +277,13 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
 </section>
 
 <!-- ============================ SETTINGS =========================== -->
+<section id="tab-kings" class="hide">
+  <!-- Kings & Prophets timeline (her 16 Sep: "Inside Daily Read, public is fine"). Its own page, shown in a
+       frame so its styles and scripts cannot touch this app; loaded on first open so Today stays fast. -->
+  <iframe id="kingsFrame" title="Kings and prophets timeline"
+    style="display:block;width:100%;height:calc(100dvh - max(2.4cm, calc(env(safe-area-inset-top, 0px) + 1.1cm)) - 118px);min-height:420px;border:1px solid var(--line);border-radius:var(--radius);background:var(--card)"></iframe>
+</section>
+
 <section id="tab-settings" class="hide">
   <div class="card">
     <h3 style="margin:0 0 6px;font-size:17px">Where you are</h3>
@@ -403,6 +410,7 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
   <nav role="tablist">
     <button role="tab" id="tab-btn-today" aria-selected="true" data-tab="today">Today</button>
     <button role="tab" id="tab-btn-journal" aria-selected="false" data-tab="journal">Journal</button>
+    <button role="tab" id="tab-btn-kings" aria-selected="false" data-tab="kings">Kings</button>
     <button role="tab" id="tab-btn-settings" aria-selected="false" data-tab="settings">Settings</button>
   </nav>
 </div>
@@ -1479,11 +1487,12 @@ function goTo(dateStr){
 
 /* --------------------------------- tabs --------------------------------- */
 function showTab(name){
-  ["today","journal","settings"].forEach(function(t){
+  ["today","journal","kings","settings"].forEach(function(t){
     document.getElementById("tab-" + t).classList.toggle("hide", t !== name);
     document.getElementById("tab-btn-" + t).setAttribute("aria-selected", String(t === name));
   });
   if (name === "journal") renderList();
+  if (name === "kings") { const f = document.getElementById("kingsFrame"); if (!f.getAttribute("src")) f.setAttribute("src", "kings.html"); }
   if (typeof fabRefresh === "function") fabRefresh();
 }
 /* Up and down move a screenful at a time. She asked for them to just be there. */
