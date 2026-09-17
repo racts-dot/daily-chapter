@@ -181,7 +181,14 @@ def check(app_dir, live=False):
         fails.append("cached chapter HTML is rendered without being cleaned again")
 
     # ---- the files the app asks the browser for -------------------------
-    for asset in ("manifest.webmanifest", "sw.js", "icon.svg"):
+    # Read what the page ACTUALLY links to. This used to carry "icon.svg" as a
+    # hardcoded name, so the day the icon became a PNG the gate failed a file
+    # nothing referenced - a gate asserting its own answer instead of checking.
+    wanted = ["manifest.webmanifest", "sw.js"]
+    for ref in re.findall(r'(?:href|src)="([^"]+\.(?:png|svg|webmanifest|js))"', html):
+        if not ref.startswith(("http", "data:")) and ref not in wanted:
+            wanted.append(ref.lstrip("./"))
+    for asset in wanted:
         if not os.path.exists(os.path.join(app_dir, asset)):
             fails.append("%s is missing - the app links to it" % asset)
     if "manifest.webmanifest" not in html:
@@ -345,8 +352,11 @@ def selftest():
     for label, break_it in cases:
         tmp = tempfile.mkdtemp(prefix="bible_gate_")
         try:
-            for asset in ("manifest.webmanifest", "sw.js", "icon.svg"):
+            for asset in ("manifest.webmanifest", "sw.js"):
                 shutil.copy(os.path.join(HERE, asset), tmp)
+            for asset in os.listdir(HERE):        # whatever icons the app ships today
+                if asset.endswith((".png", ".svg")):
+                    shutil.copy(os.path.join(HERE, asset), tmp)
             broken = break_it(src)
             if broken == src:
                 print("  BROKEN TEST the edit for %r changed nothing" % label)
