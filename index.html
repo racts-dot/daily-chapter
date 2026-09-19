@@ -133,6 +133,70 @@ body.show-notes .passage .tn-ref{font-weight:700;margin-right:6px}
 /* On a narrow phone a floated box squeezes the section headings into a
    four-line ribbon. Below 480px it sits full width instead, still small. */
 @media (max-width:480px){ .summary{float:none;width:auto;margin:0 0 12px} }
+/* --- where and when: the kings timeline and the map, on the reading page ---
+   The same colours kings.html uses, copied deliberately so the drawer and the
+   full timeline read as one thing rather than two apps. */
+:root{
+  --judah:#8a5a2b; --israel:#2f6b63; --prophet:#6b4a86; --event:#8c2f39;
+  --map-sea:#5a86a1; --map-land:#f4ecdc; --map-line:#6f6353; --map-river:#3f7596; --map-dot:#7d705f;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --judah:#d9a066; --israel:#69bdb0; --prophet:#c0a0dd; --event:#e58b93;
+    --map-sea:#40708e; --map-land:#1b1814; --map-line:#9a8b73; --map-river:#5b93ae; --map-dot:#9a8e7c;
+  }
+}
+.when{padding:12px 14px}
+.when summary{display:flex;align-items:baseline;gap:10px;cursor:pointer;list-style:none;
+  font-size:15px;font-weight:600;color:var(--ink)}
+.when summary::-webkit-details-marker{display:none}
+.when summary .era-lede{flex:1;font-weight:400;font-size:14px;color:var(--soft);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.when summary .era-chev{font-size:12px;color:var(--soft)}
+.when[open] summary .era-chev{visibility:hidden}
+.era-body{margin-top:12px}
+.era-line{font-size:16px;margin:0 0 10px}
+.era-line b{font-weight:700}
+.era-axis{display:flex;justify-content:space-between;font-size:12px;color:var(--soft);margin:2px 0 3px}
+/* Six hundred years across a phone is about half a pixel a year, so the rail is
+   context only - the readable names are the chips underneath it. */
+.era-rail{position:relative;height:48px;background:var(--bg);border:1px solid var(--line);
+  border-radius:10px;overflow:hidden}
+.era-lane{position:absolute;left:0;right:0;height:18px}
+.era-lane.judah{top:4px}
+.era-lane.israel{top:25px}
+.era-seg{position:absolute;top:0;height:100%;min-width:2px;padding:0;border:0;border-radius:3px;
+  background:var(--judah);opacity:.42;cursor:pointer}
+.era-lane.israel .era-seg{background:var(--israel)}
+.era-seg.on{opacity:1}
+.era-band{position:absolute;top:0;bottom:0;min-width:3px;background:rgba(122,92,46,.28);
+  border-left:2px solid var(--accent);border-right:2px solid var(--accent);pointer-events:none}
+@media (prefers-color-scheme: dark){ .era-band{background:rgba(216,180,106,.26)} }
+.era-said{font-size:14px;color:var(--soft);margin:6px 0 0;min-height:1.4em}
+.era-key{font-size:13px;color:var(--soft);margin:4px 0 0}
+.era-chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 0}
+.era-chip{font:inherit;font-size:13px;text-align:left;background:rgba(122,92,46,.10);
+  border:1px solid var(--line);border-radius:99px;padding:3px 11px;color:var(--ink);cursor:pointer}
+.era-chip i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;background:var(--map-dot)}
+.era-chip .yrs{color:var(--soft)}
+.era-h{font-size:13px;letter-spacing:.4px;text-transform:uppercase;color:var(--soft);
+  font-weight:700;margin:16px 0 0}
+svg.era-map{width:100%;height:auto;display:block;margin-top:8px;background:var(--map-sea);
+  border-radius:12px;border:1px solid var(--line)}
+.era-map .land{fill:var(--map-land);stroke:var(--map-line);stroke-width:1.2}
+.era-map .lake{fill:var(--map-sea);stroke:var(--map-line);stroke-width:.8}
+.era-map .river{fill:none;stroke:var(--map-river);stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round}
+.era-map .dot{fill:var(--map-dot)}
+.era-map .dot.cap{fill:var(--judah)}
+.era-map .dot.evt{fill:var(--event)}
+.era-map .dot.home{fill:var(--prophet)}
+.era-map .dot.named{fill:var(--good)}
+/* No font-size here on purpose: it is set per view on the element, because the
+   two map views are different widths and a CSS size would override both. */
+.era-map .lbl{fill:var(--ink);paint-order:stroke;stroke:var(--card);
+  stroke-width:3px;stroke-linejoin:round}
+.era-note{font-size:13px;line-height:1.5;color:var(--soft);background:rgba(122,92,46,.07);
+  border-radius:10px;padding:9px 11px;margin:12px 0 0}
 .memo{max-height:52vh;padding:12px 14px 14px}
 .memo textarea{min-height:16vh;font-size:16px}
 footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
@@ -223,6 +287,18 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
       <span id="rateNow"></span>
     </div>
   </div>
+
+  <!-- Her note 19 Sep 2026: "the king and the like the map are like retractable on the page.
+       So I know like or something that moves along along the timeline that I'm seeing per the
+       chapter or the verses", and, the same evening, "can I also have the geographics for that
+       specific time? And the geographic like tap on the bottom of the map is like".
+       So: one drawer on the reading page, shut until she opens it, holding the same reigns and
+       the same map as the Kings tab with THIS chapter marked on both, and the places written
+       out as buttons underneath the map because the dots are too small to hit on a phone. -->
+  <details class="card when" id="whenCard">
+    <summary>Where and when<span class="era-lede" id="whenLede"></span><span class="era-chev" aria-hidden="true">&#8964;</span></summary>
+    <div class="era-body" id="whenBody"></div>
+  </details>
 
   <div class="card">
     <div class="passage" id="passage"><p class="empty">Loading the chapter&hellip;</p></div>
@@ -1083,6 +1159,575 @@ async function loadPassage(force){
   }
 }
 
+/* --------------------------- where and when ------------------------------
+   Her note 19 Sep 2026: "the king and the like the map are like retractable on
+   the page. So I know like or something that moves along along the timeline
+   that I'm seeing per the chapter or the verses", and the same evening, "can I
+   also have the geographics for that specific time?".
+
+   So the Kings tab's two things - the reigns and the map - also sit on the
+   reading page, shut until she opens them, with THIS chapter marked on both.
+
+   Every name, year, place and verse here is read out of kings.html when the
+   drawer is first opened. Not one of them is written out again in this file:
+   two hand-kept copies of the same fact drift within days, and kings.html is
+   the one the build script checks.
+
+   A chapter is placed only where the timeline actually cites a verse inside it.
+   Where it does not - which is most of the Bible - the drawer says so. It does
+   not reach for the nearest king and call that the date.
+------------------------------------------------------------------------- */
+const ERA_SRC = "kings.html";
+const ERA_KINDS = { cap:"royal city", evt:"place in an event", home:"home of a prophet",
+                    named:"named in this chapter" };
+let eraD = null;          /* the whole data object out of kings.html */
+let eraIdx = null;        /* "Book|chapter" -> the records that cite that chapter */
+let eraK = null, eraPL = null, eraPW = null;   /* kings, places, foreign rulers by id */
+let eraLoading = false, eraFailed = false;
+let eraView = null;       /* which map she last chose, this session */
+
+/* "2 Samuel 5:6-7" and "2 Chronicles 14-16" both turn up in the data, and they
+   mean different things: the first is one chapter, the second is three. */
+const ERA_REF = /^(.+?)\s+(\d+)(?:[–-](\d+))?(?::[\d\s:,–-]+)?$/;
+function eraRef(ref){
+  const m = ERA_REF.exec(String(ref || "").trim());
+  if (!m) return null;
+  const from = Number(m[2]), to = m[3] ? Number(m[3]) : from;
+  if (!from || to < from) return null;
+  return { book: m[1], from: from, to: to };
+}
+
+/* She picks Thiele's or Galil's numbers in the Kings tab, and kings.html stores
+   that under "priesthood" on this same site. Read it rather than adding a second
+   setting she would have to find and keep in step. */
+function eraChron(){
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem("priesthood") || "null"); } catch (err) {}
+  const c = saved && saved.chron;
+  return (c === "thiele" || c === "galil") ? c : "thiele";
+}
+function eraChronName(){ return eraChron() === "galil" ? "Galil" : "Thiele"; }
+
+function eraBuild(D){
+  eraK = {}; eraPL = {}; eraPW = {};
+  D.kings.kings.forEach(function(k){ eraK[k.id] = k; });
+  D.places.places.forEach(function(p){ eraPL[p.id] = p; });
+  D.powers.powers.forEach(function(p){ (p.rulers || []).forEach(function(r){ eraPW[r.id] = r; }); });
+
+  const idx = {};
+  function file(ref, hit){
+    const r = eraRef(ref);
+    if (!r) return;
+    for (let c = r.from; c <= r.to; c++){
+      const key = r.book + "|" + c;
+      if (!idx[key]) idx[key] = [];
+      if (!idx[key].some(function(h){ return h.kind === hit.kind && h.id === hit.id; })) idx[key].push(hit);
+    }
+  }
+  D.kings.kings.forEach(function(k){
+    const hit = { kind:"king", id:k.id, rec:k, name:k.name,
+      what: k.title + " of " + (k.kingdom === "united" ? "the united kingdom" :
+            k.kingdom === "judah" ? "Judah" : "Israel") };
+    [k.reign_verse, k.summary_verse, k.relation && k.relation.verse].forEach(function(v){ if (v) file(v.ref, hit); });
+    (k.capitals || []).forEach(function(c){ file(c.verse.ref, hit); });
+    (k.other_refs || []).forEach(function(r){ file(r, hit); });
+  });
+  D.prophets.prophets.forEach(function(p){
+    const hit = { kind:"prophet", id:p.id, rec:p, name:p.name, what: p.description || "prophet" };
+    if (p.tie_verse) file(p.tie_verse.ref, hit);
+    if (p.home) file(p.home.verse.ref, hit);
+    (p.other_refs || []).forEach(function(r){ file(r, hit); });
+  });
+  D.events.events.forEach(function(e){
+    const hit = { kind:"event", id:e.id, rec:e, name:e.title, what:"event" };
+    (e.verses || []).forEach(function(v){ file(v.ref, hit); });
+  });
+  D.governors.governors.forEach(function(g){
+    (g.named_in || []).forEach(function(n){
+      file(n.verse.ref, { kind:"governor", id:g.id, rec:g, named:n, name:g.name, what:g.role });
+    });
+    (g.other_refs || []).forEach(function(r){
+      file(r, { kind:"governor", id:g.id, rec:g, named:(g.named_in || [])[0], name:g.name, what:g.role });
+    });
+  });
+  D.high_priests.priests.forEach(function(pr){
+    (pr.named_in || []).forEach(function(n){
+      file(n.verse.ref, { kind:"priest", id:pr.id, rec:pr, named:n, name:pr.name, what:"priest" });
+    });
+    (pr.other_refs || []).forEach(function(r){
+      file(r, { kind:"priest", id:pr.id, rec:pr, named:(pr.named_in || [])[0], name:pr.name, what:"priest" });
+    });
+  });
+  eraIdx = idx;
+}
+
+/* A ruler's years, whichever list he is on - the kings carry start/end, the
+   Assyrian, Babylonian, Persian and Egyptian rulers carry from/to. */
+function eraRulerYears(id, chron){
+  const k = eraK[id];
+  if (k && k.reigns && k.reigns[chron]) return { from: k.reigns[chron].start, to: k.reigns[chron].end };
+  const p = eraPW[id];
+  if (p && typeof p.from === "number") return { from: p.from, to: p.to };
+  return null;
+}
+function eraYears(hit, chron){
+  if (hit.kind === "king") return eraRulerYears(hit.id, chron);
+  if (hit.kind === "prophet"){
+    const a = hit.rec.placed && hit.rec.active && hit.rec.active.years && hit.rec.active.years[chron];
+    return a ? { from:a.from, to:a.to } : null;
+  }
+  if (hit.kind === "event"){
+    const y = hit.rec.years && hit.rec.years[chron];
+    return typeof y === "number" ? { from:y, to:y } : null;
+  }
+  if (hit.kind === "governor"){
+    const w = hit.named && hit.named.window && hit.named.window.years && hit.named.window.years[chron];
+    return w ? { from:w.from, to:w.to } : null;
+  }
+  if (hit.kind === "priest") return hit.named ? eraRulerYears(hit.named.ruler, chron) : null;
+  return null;
+}
+function eraLabel(hit, chron){
+  const y = eraYears(hit, chron);
+  if (!y) return "no dates";
+  return y.from === y.to ? y.from + " BC" : y.from + "–" + y.to + " BC";
+}
+
+/* The places this chapter touches, and why each one is lit: a king's royal city,
+   an event's setting, a prophet's home, or a place the chapter names outright. */
+function eraMarks(hits, book, chapter){
+  const marks = {};
+  function put(id, kind){ if (id && eraPL[id] && !marks[id]) marks[id] = kind; }
+  hits.forEach(function(h){
+    if (h.kind === "king") (h.rec.capitals || []).forEach(function(c){ put(c.place, "cap"); });
+    if (h.kind === "event") (h.rec.places || []).forEach(function(p){ put(p, "evt"); });
+    if (h.kind === "prophet" && h.rec.home) put(h.rec.home.place, "home");
+    if (h.kind === "governor") put(h.rec.place, "evt");
+  });
+  eraD.places.places.forEach(function(p){
+    const r = eraRef(p.verse);
+    if (r && r.book === book && chapter >= r.from && chapter <= r.to) marks[p.id] = "named";
+  });
+  return marks;
+}
+
+/* The ends of the rail, taken from the reigns themselves rather than written in
+   here - a number kept by hand beside the data it describes goes stale. */
+function eraBounds(chron){
+  let first = -Infinity, last = Infinity;
+  eraD.kings.kings.forEach(function(k){
+    const y = k.reigns && k.reigns[chron];
+    if (!y) return;
+    if (y.start > first) first = y.start;
+    if (y.end < last) last = y.end;
+  });
+  eraD.events.events.forEach(function(e){
+    const y = e.years && e.years[chron];
+    if (typeof y !== "number") return;
+    if (y > first) first = y;
+    if (y < last) last = y;
+  });
+  return (first > last) ? { first: first, last: last } : null;
+}
+
+/* Two of these: one under the rail, one under the map. With a single line at the
+   top, tapping a place answered half a screen above where the finger was. */
+function eraSay(id, text){
+  const el = document.getElementById(id);
+  if (el) el.textContent = text;
+}
+function eraSaidLine(id){
+  const p = document.createElement("p");
+  p.className = "era-said";
+  p.id = id;
+  return p;
+}
+/* "named in this chapter" and "royal city" were both amber in the dark theme -
+   the two tokens are three shades apart - so the colours told her nothing. */
+const ERA_DOTS = { cap:"Amber", evt:"Pink", home:"Purple", named:"Green" };
+function eraDotColour(kind){
+  return kind === "cap" ? "var(--judah)" : kind === "evt" ? "var(--event)" :
+         kind === "home" ? "var(--prophet)" : "var(--good)";
+}
+
+/* Six hundred years across a phone is about half a pixel a year, so the rail is
+   there to show WHERE, not to be read. The names underneath it are the reading
+   part; the rail is the thing that moves as she pages through the chapters. */
+function eraRail(span, named, chron){
+  const b = eraBounds(chron);
+  const wrap = document.createElement("div");
+  if (!b) return wrap;
+  const total = b.first - b.last;
+  const pct = function(year){ return Math.max(0, Math.min(100, (b.first - year) / total * 100)); };
+
+  const axis = document.createElement("div");
+  axis.className = "era-axis";
+  [b.first, Math.round((b.first + b.last) / 2), b.last].forEach(function(y){
+    const s = document.createElement("span");
+    s.textContent = y + " BC";
+    axis.appendChild(s);
+  });
+  wrap.appendChild(axis);
+
+  const rail = document.createElement("div");
+  rail.className = "era-rail";
+  const lanes = {};
+  ["judah", "israel"].forEach(function(name){
+    const lane = document.createElement("div");
+    lane.className = "era-lane " + name;
+    lanes[name] = lane;
+    rail.appendChild(lane);
+  });
+  eraD.kings.kings.forEach(function(k){
+    const y = k.reigns && k.reigns[chron];
+    if (!y) return;
+    /* kings.html lists the united monarchy under Judah, so this rail does too. */
+    const lane = lanes[k.kingdom === "israel" ? "israel" : "judah"];
+    const seg = document.createElement("button");
+    seg.type = "button";
+    /* Lit means THIS chapter names him. Lighting everyone whose reign merely
+       overlaps the span lit fifteen kings for 1 Kings 15, which says nothing. */
+    seg.className = "era-seg" + (named[k.id] ? " on" : "");
+    seg.style.left = pct(y.start) + "%";
+    seg.style.width = Math.max(0.35, pct(y.end) - pct(y.start)) + "%";
+    const said = k.name + " — " + k.title + " of " +
+      (k.kingdom === "united" ? "the united kingdom" : k.kingdom === "judah" ? "Judah" : "Israel") +
+      ", " + (y.label ? y.label + " BC" : y.start + "–" + y.end + " BC");
+    seg.title = said;
+    seg.setAttribute("aria-label", said);
+    seg.addEventListener("click", function(){ eraSay("eraSaid", said); });
+    lane.appendChild(seg);
+  });
+  if (span){
+    const band = document.createElement("div");
+    band.className = "era-band";
+    band.style.left = pct(span.from) + "%";
+    band.style.width = (pct(span.to) - pct(span.from)) + "%";
+    rail.appendChild(band);
+  }
+  wrap.appendChild(rail);
+
+  const key = document.createElement("p");
+  key.className = "era-key";
+  key.textContent = "Top row Judah and the united kingdom, bottom row Israel. Tap any reign to name it.";
+  wrap.appendChild(key);
+  return wrap;
+}
+
+function eraMapEl(marks, chron){
+  const box = document.createElement("div");
+  const views = eraD.map_paths.views;
+  const names = Object.keys(views);
+  const inView = function(key){
+    const v = views[key];
+    const k = v.height / (v.lat[1] - v.lat[0]);
+    return Object.keys(marks).every(function(id){
+      const p = eraPL[id];
+      const x = (p.lon - v.lon[0]) * v.cos_lat * k, y = (v.lat[1] - p.lat) * k;
+      return x >= -2 && y >= -2 && x <= v.width + 2 && y <= v.height + 2;
+    });
+  };
+  /* Nineveh and Babylon fall off the Israel-and-Judah map, so when this chapter
+     reaches that far the wider one is opened instead of quietly hiding them. */
+  let view = eraView && views[eraView] ? eraView : null;
+  if (!view) view = names.filter(inView)[0] || names[names.length - 1];
+  const v = views[view];
+
+  if (names.length > 1){
+    const row = document.createElement("div");
+    row.className = "era-chips";
+    names.forEach(function(key){
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "era-chip";
+      b.textContent = views[key].label;
+      b.setAttribute("aria-pressed", String(key === view));
+      if (key === view) b.style.borderColor = "var(--accent)";
+      b.addEventListener("click", function(){ eraView = key; eraRender(); });
+      row.appendChild(b);
+    });
+    box.appendChild(row);
+  }
+
+  const esc = function(t){ return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;"); };
+  const k = v.height / (v.lat[1] - v.lat[0]);
+  const px = function(p){ return [(p.lon - v.lon[0]) * v.cos_lat * k, (v.lat[1] - p.lat) * k]; };
+  /* Sized against the view, not in fixed map units: the two views are 757 and
+     1000 units wide, so one fixed radius came out a different size in each and
+     both were three or four pixels on a phone - a smudge, not a marker. */
+  const hotR = Math.round(v.width / 55), coldR = Math.round(v.width / 130),
+        lblSize = Math.round(v.width / 26);
+  let m = "";
+  v.land.forEach(function(d){ m += '<path class="land" d="' + d + '"/>'; });
+  v.rivers.forEach(function(r){ r.paths.forEach(function(d){ m += '<path class="river" d="' + d + '"/>'; }); });
+  v.lakes.forEach(function(l){ l.paths.forEach(function(d){ m += '<path class="lake" d="' + d + '"/>'; }); });
+  const shown = [];
+  eraD.places.places.forEach(function(p){
+    const xy = px(p);
+    if (xy[0] < -2 || xy[1] < -2 || xy[0] > v.width + 2 || xy[1] > v.height + 2) return;
+    const hot = marks[p.id] || "";
+    m += '<circle class="dot ' + hot + '" cx="' + xy[0].toFixed(1) + '" cy="' + xy[1].toFixed(1) +
+         '" r="' + (hot ? hotR : coldR) + '"><title>' + esc(p.name) + '</title></circle>';
+    if (hot) shown.push([p.name, xy[0], xy[1]]);
+  });
+  /* Tirzah and Samaria are about ten kilometres apart and their labels printed
+     on top of each other as "Samariah". Nudge a label down when it would land on
+     the one above it; the dot itself never moves. */
+  shown.sort(function(a, b){ return a[2] - b[2]; });
+  let lastY = -Infinity, lastX = -Infinity;
+  shown.forEach(function(a){
+    let y = a[2] + lblSize * 0.35;
+    if (y - lastY < lblSize && Math.abs(a[1] - lastX) < lblSize * 5) y = lastY + lblSize;
+    lastY = y; lastX = a[1];
+    m += '<text class="lbl" font-size="' + lblSize + '" x="' + (a[1] + hotR * 1.6).toFixed(1) +
+         '" y="' + y.toFixed(1) + '">' + esc(a[0]) + '</text>';
+  });
+  const holder = document.createElement("div");
+  holder.innerHTML = '<svg class="era-map" viewBox="0 0 ' + v.width + ' ' + v.height +
+    '" role="img" aria-label="Map of ' + esc(v.label) +
+    ': coastline, lakes and rivers only, with the places this chapter touches marked. No borders are drawn."></svg>';
+  const svg = holder.firstChild;
+  svg.innerHTML = m;
+  box.appendChild(svg);
+
+  /* Her note asks for the tap "on the bottom of the map". The dots are a few
+     pixels across on a phone and cannot be hit, so every marked place is a
+     button under the map as well. */
+  const ids = Object.keys(marks);
+  if (ids.length){
+    const row = document.createElement("div");
+    row.className = "era-chips";
+    ids.forEach(function(id){
+      const p = eraPL[id], hot = marks[id], xy = px(p);
+      const off = xy[0] < -2 || xy[1] < -2 || xy[0] > v.width + 2 || xy[1] > v.height + 2;
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "era-chip";
+      const i = document.createElement("i");
+      i.style.background = eraDotColour(hot);
+      b.appendChild(i);
+      b.appendChild(document.createTextNode(p.name + (off ? " (off this map)" : "")));
+      b.addEventListener("click", function(){
+        eraSay("eraSaidMap", p.name + " — " + ERA_KINDS[hot] +
+          (p.identified_with ? ", identified with " + p.identified_with : "") +
+          (p.verse ? ". Cited from " + prettyRef(p.verse) + "." : "") +
+          (off ? " Not drawn on this map." : ""));
+      });
+      row.appendChild(b);
+    });
+    box.appendChild(row);
+    /* Only the kinds actually on this map, so the key never names a colour that
+       is not there. */
+    const kinds = [];
+    ids.forEach(function(id){ if (kinds.indexOf(marks[id]) < 0) kinds.push(marks[id]); });
+    const key = document.createElement("p");
+    key.className = "era-key";
+    key.textContent = kinds.map(function(kind){ return ERA_DOTS[kind] + " " + ERA_KINDS[kind]; })
+      .join(" · ") + ". Tap a place to read it out.";
+    box.appendChild(key);
+    box.appendChild(eraSaidLine("eraSaidMap"));
+  }
+  return box;
+}
+
+async function eraLoad(){
+  if (eraD || eraLoading) return;
+  eraLoading = true;
+  try {
+    const res = await fetch(ERA_SRC);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const text = await res.text();
+    /* kings.html writes its whole dataset as one `const D = {...};` line. Pull
+       that out rather than copying the data into this file, so there is only
+       ever one of it. */
+    const at = text.indexOf("const D = ");
+    /* Split so the closing tag is never spelt out in this file: an HTML parser
+       ends a script at the first </ script > it sees, string literal or not,
+       and writing it whole silently cut the rest of the app off. */
+    const end = at < 0 ? -1 : text.indexOf(";<" + "/script>", at);
+    if (at < 0 || end < 0) throw new Error("no timeline data in " + ERA_SRC);
+    eraD = JSON.parse(text.slice(at + 10, end));
+    eraBuild(eraD);
+    eraFailed = false;
+  } catch (err) {
+    eraD = null; eraFailed = true;
+  }
+  eraLoading = false;
+  eraRender();
+}
+
+function eraRender(){
+  const card = document.getElementById("whenCard");
+  if (!card) return;
+  const lede = document.getElementById("whenLede");
+  const body = document.getElementById("whenBody");
+  const info = chapterFor(viewDate);
+  const open = card.hasAttribute("open");
+  body.textContent = "";
+
+  if (!open){
+    /* Shut and never opened: nothing is fetched and nothing is claimed. */
+    if (!eraD) { lede.textContent = "— this chapter on the kings timeline"; return; }
+  }
+  if (!eraD){
+    if (eraFailed){
+      lede.textContent = "— could not be opened";
+      body.appendChild(eraNote("The timeline could not be loaded. It is part of this app, so " +
+        "this is almost certainly no signal on a device that has not opened the Kings tab yet. " +
+        "It will work once it has."));
+      return;
+    }
+    lede.textContent = "— opening…";
+    body.appendChild(eraNote("Opening the timeline…"));
+    eraLoad();
+    return;
+  }
+
+  const chron = eraChron();
+  const book = info.state === "ok" ? info.item.book : "";
+  const chapter = info.state === "ok" ? info.item.chapter : 0;
+  const hits = (book && eraIdx[book + "|" + chapter]) || [];
+
+  if (!hits.length){
+    lede.textContent = "— not in the kings era";
+    const p = document.createElement("p");
+    p.className = "era-line";
+    p.textContent = book
+      ? "Nothing in the kings timeline cites a verse in " + prettyRef(book + " " + chapter) + "."
+      : "No chapter for this day.";
+    body.appendChild(p);
+    const near = eraNearest(book, chapter);
+    if (near.length){
+      const q = document.createElement("p");
+      q.className = "era-key";
+      q.textContent = "The nearest chapters it does cite: " +
+        near.map(function(c){ return prettyRef(book + " " + c); }).join(" and ") + ".";
+      body.appendChild(q);
+    }
+    body.appendChild(eraOpenFull());
+    return;
+  }
+
+  /* The span of this chapter is the years of everything the timeline ties to
+     it, joined up - not a single date, because a chapter is not a moment. */
+  let span = null;
+  hits.forEach(function(h){
+    const y = eraYears(h, chron);
+    if (!y) return;
+    span = span ? { from: Math.max(span.from, y.from), to: Math.min(span.to, y.to) } : { from:y.from, to:y.to };
+  });
+
+  const names = hits.slice(0, 2).map(function(h){ return h.name; }).join(", ") +
+    (hits.length > 2 ? " and " + (hits.length - 2) + " more" : "");
+  const spanText = span ? (span.from === span.to ? span.from + " BC" : span.from + "–" + span.to + " BC") : "";
+  lede.textContent = "— kings timeline: " + names + (spanText ? " · " + spanText : "");
+
+  const line = document.createElement("p");
+  line.className = "era-line";
+  /* Say what the link actually is, not more. The timeline QUOTES a verse from
+     this chapter for each of these; it does not say the chapter happened then.
+     1 Kings 15 mentions David in passing, which is why its stretch runs 141
+     years, and Acts 13 is quoted for Saul's forty years while being about Paul.
+     "This chapter is dated X" would have been wrong in both. */
+  line.textContent = !span
+    ? "The kings timeline quotes a verse from this chapter for each name below, and gives them no dates."
+    : "The kings timeline quotes a verse from this chapter for each name below, " +
+      (span.from === span.to ? "all of them in " + span.from + " BC"
+                             : "between " + span.from + " and " + span.to + " BC") +
+      " (" + eraChronName() + ").";
+  body.appendChild(line);
+
+  const namedKings = {};
+  hits.forEach(function(h){ if (h.kind === "king") namedKings[h.id] = true; });
+  body.appendChild(eraRail(span, namedKings, chron));
+
+  body.appendChild(eraSaidLine("eraSaid"));
+
+  body.appendChild(eraHead("Who and what it is quoted for"));
+  const chips = document.createElement("div");
+  chips.className = "era-chips";
+  hits.forEach(function(h){
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "era-chip";
+    const i = document.createElement("i");
+    i.style.background = h.kind === "prophet" ? "var(--prophet)" : h.kind === "event" ? "var(--event)" :
+      h.kind === "king" && h.rec.kingdom === "israel" ? "var(--israel)" : "var(--judah)";
+    b.appendChild(i);
+    b.appendChild(document.createTextNode(h.name));
+    const yr = document.createElement("span");
+    yr.className = "yrs";
+    yr.textContent = " · " + eraLabel(h, chron);
+    b.appendChild(yr);
+    b.addEventListener("click", function(){ eraSay(h.name + " — " + h.what + ", " + eraLabel(h, chron) + "."); });
+    chips.appendChild(b);
+  });
+  body.appendChild(chips);
+
+  const marks = eraMarks(hits, book, chapter);
+  body.appendChild(eraHead("Where it happens"));
+  if (Object.keys(marks).length){
+    body.appendChild(eraMapEl(marks, chron));
+  } else {
+    body.appendChild(eraNote("The timeline ties no place to this chapter."));
+  }
+
+  body.appendChild(eraNote("Reigns follow " + eraChronName() + "; change that in the Kings tab. " +
+    "Nothing here is guessed: a chapter appears only where the timeline quotes a verse inside it. " +
+    "No borders are drawn. " + eraD.map_paths.caveat +
+    " Coastline, lakes and rivers: Natural Earth (public domain). " +
+    "Place markers: OpenBible.info Bible Geocoding Data (CC BY 4.0)."));
+  body.appendChild(eraOpenFull());
+}
+
+function eraHead(text){
+  const h = document.createElement("p");
+  h.className = "era-h";
+  h.textContent = text;
+  return h;
+}
+function eraNote(text){
+  const p = document.createElement("p");
+  p.className = "era-note";
+  p.textContent = text;
+  return p;
+}
+function eraOpenFull(){
+  const row = document.createElement("div");
+  row.className = "row";
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "btn ghost";
+  b.textContent = "Open the full timeline";
+  b.addEventListener("click", function(){
+    saveEntry(false);
+    showTab("kings");
+    window.scrollTo({ top:0, behavior:"smooth" });
+  });
+  row.appendChild(b);
+  return row;
+}
+/* Nothing cites this chapter - so say which chapters of the same book it DOES
+   cite, and say no more than that. Where the nearest king reigned is not where
+   this chapter happened, and guessing it would be inventing a date. */
+function eraNearest(book, chapter){
+  if (!book || !eraIdx) return [];
+  const have = Object.keys(eraIdx).filter(function(key){ return key.indexOf(book + "|") === 0; })
+    .map(function(key){ return Number(key.slice(book.length + 1)); })
+    .sort(function(a, b){ return a - b; });
+  if (!have.length) return [];
+  const below = have.filter(function(c){ return c < chapter; }).pop();
+  const above = have.filter(function(c){ return c > chapter; })[0];
+  return [below, above].filter(function(c){ return typeof c === "number"; });
+}
+
+document.getElementById("whenCard").addEventListener("toggle", function(ev){
+  jset("whenOpen", ev.target.hasAttribute("open"));
+  eraRender();
+});
+if (jget("whenOpen", false) === true) document.getElementById("whenCard").setAttribute("open", "");
+
 /* ------------------------------- entries -------------------------------- */
 function blankEntry(date, ref){
   return { date:date, ref:ref, plan:settings.plan, done:false,
@@ -1479,6 +2124,7 @@ function render(){
   renderStats();
   renderList();
   loadPassage(false);
+  eraRender();          /* the timeline band moves with the chapter, not with the day */
 }
 function goTo(dateStr){
   saveEntry(false);
