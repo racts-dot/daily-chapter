@@ -164,8 +164,13 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
 .memo.float{left:auto;top:auto;right:12px;bottom:96px;width:min(300px,calc(100vw - 24px));
   max-height:44vh;border-radius:14px;border:1px solid var(--line);
   box-shadow:0 10px 34px rgba(0,0,0,.28)}
-.memo.float .memo-head{cursor:grab;touch-action:none}
-.memo.float .memo-head.dragging{cursor:grabbing}
+/* Her note 19 Sep 2026: "all the floating things should be movable, no matter
+   where you're dragging." So the whole card is the handle, not just its title
+   row. The writing box keeps its own gestures - a drag in there is her placing
+   the caret and picking words, which is the point of the box. */
+.memo.float{cursor:grab;touch-action:none}
+.memo.float.dragging{cursor:grabbing}
+.memo.float textarea,.memo.float input{cursor:auto;touch-action:auto}
 .memo.float textarea{min-height:14vh;font-size:16px}
 .memo-head .pin{font-size:14px;font-weight:600;padding:5px 10px;background:transparent;
   border:1px solid var(--line);color:var(--soft)}
@@ -190,7 +195,7 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
 .toast button{font:inherit;font-size:15px;font-weight:700;background:transparent;border:0;
   color:var(--accent-ink);text-decoration:underline;cursor:pointer;padding:0;white-space:nowrap}
 </style>
-<script src="../textsize.js" data-bottom="126"></script><script src="../feedback.js" defer></script><script src="../notion-sync.js"></script><script src="../marks.js" defer></script><!-- shell daily-chapter-v40: bump with sw.js CACHE -->
+<script src="../textsize.js" data-bottom="126"></script><script src="../feedback.js" defer></script><script src="../notion-sync.js"></script><script src="../marks.js" defer></script><script src="./anydrag.js" defer></script><!-- shell daily-chapter-v45: bump with sw.js CACHE -->
 </head>
 <body>
 <div class="wrap">
@@ -2356,7 +2361,6 @@ document.getElementById("memoClose").addEventListener("click", function(){ memoO
 ------------------------------------------------------------------------- */
 (function(){
   const panel = document.getElementById("memoPanel");
-  const head  = panel.querySelector(".memo-head");
   const btn   = document.getElementById("memoFloat");
 
   /* Some embedders report window.innerWidth as 0; documentElement is the fallback,
@@ -2402,22 +2406,60 @@ document.getElementById("memoClose").addEventListener("click", function(){ memoO
 
   btn.addEventListener("click", function(){ setFloating(!panel.classList.contains("float")); });
 
-  let dx = 0, dy = 0, dragging = false;
-  head.addEventListener("pointerdown", function(e){
-    if (!panel.classList.contains("float") || e.target.closest("button")) return;
-    dragging = true;
-    head.classList.add("dragging");
-    head.setPointerCapture(e.pointerId);
+  /* Her note 19 Sep 2026: "all the floating things should be movable, no matter
+     where you're dragging." It used to move only from its title row, and a drag
+     that began on Float, Dock or Close did nothing at all.
+
+     Now the whole card is the handle, buttons included. A press is still a
+     press: nothing moves until the finger has gone 8px, and once it has, the
+     click that would have followed is swallowed in the capture phase. The
+     writing box is left out on purpose - dragging in there selects words. */
+  const NODRAG = "textarea,input,select,[contenteditable]:not([contenteditable=false])";
+  let dx = 0, dy = 0, dragging = false, shifted = false, pid = null;
+  panel.addEventListener("pointerdown", function(e){
+    /* shifted=false FIRST: a flag left up by an earlier drag would otherwise
+       eat the next tap that landed on the writing box. */
+    shifted = false; dragging = false;
+    if (e.button > 0) return;
+    if (!panel.classList.contains("float")) return;
+    if (e.target.closest && e.target.closest(NODRAG)) return;
+    dragging = true; pid = e.pointerId;
     const box = panel.getBoundingClientRect();
     dx = e.clientX - box.left; dy = e.clientY - box.top;
-  });
-  head.addEventListener("pointermove", function(e){
-    if (!dragging) return;
+    document.addEventListener("pointermove", onMove, { capture: true, passive: false });
+    document.addEventListener("pointerup", onUp, true);
+    document.addEventListener("pointercancel", onUp, true);
+  }, true);
+  /* Watched on the DOCUMENT, not on the card: the pointer leaves the card on the
+     first movement, and a listener on the card hears nothing after that. A touch
+     is implicitly captured so it seemed to work; a mouse drag is not, and did
+     not move the card at all until this was found. */
+  function onMove(e){
+    if (!dragging || e.pointerId !== pid) return;
+    if (!shifted){
+      const box = panel.getBoundingClientRect();
+      if (Math.abs(e.clientX - dx - box.left) + Math.abs(e.clientY - dy - box.top) < 8) return;
+      shifted = true;
+      panel.classList.add("dragging");
+      try { panel.setPointerCapture(pid); } catch (err) {}
+    }
     place(e.clientX - dx, e.clientY - dy);
-  });
-  ["pointerup", "pointercancel"].forEach(function(ev){
-    head.addEventListener(ev, function(){ dragging = false; head.classList.remove("dragging"); });
-  });
+    if (e.cancelable) e.preventDefault();
+  }
+  function onUp(){
+    if (!dragging) return;
+    dragging = false;
+    panel.classList.remove("dragging");
+    document.removeEventListener("pointermove", onMove, true);
+    document.removeEventListener("pointerup", onUp, true);
+    document.removeEventListener("pointercancel", onUp, true);
+    if (shifted) setTimeout(function(){ shifted = false; }, 400);
+  }
+  panel.addEventListener("click", function(e){
+    if (!shifted) return;
+    shifted = false;
+    e.stopImmediatePropagation(); e.preventDefault();
+  }, true);
 
   window.addEventListener("resize", function(){
     if (!panel.classList.contains("float")) return;
