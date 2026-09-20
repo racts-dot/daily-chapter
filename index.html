@@ -154,6 +154,8 @@ body.show-notes .passage .tn-ref{font-weight:700;margin-right:6px}
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .when summary .era-chev{font-size:12px;color:var(--soft)}
 .when[open] summary .era-chev{visibility:hidden}
+.whenrow{display:grid;gap:12px}
+@media (min-width:860px){ .whenrow{grid-template-columns:1fr 1fr;align-items:start} }
 .era-body{margin-top:12px}
 .era-line{font-size:16px;margin:0 0 10px}
 .era-line b{font-weight:700}
@@ -295,10 +297,16 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
        So: one drawer on the reading page, shut until she opens it, holding the same reigns and
        the same map as the Kings tab with THIS chapter marked on both, and the places written
        out as buttons underneath the map because the dots are too small to hit on a phone. -->
-  <details class="card when" id="whenCard">
-    <summary>Where and when<span class="era-lede" id="whenLede"></span><span class="era-chev" aria-hidden="true">&#8964;</span></summary>
-    <div class="era-body" id="whenBody"></div>
-  </details>
+  <div class="whenrow">
+    <details class="card when" id="whenCard">
+      <summary>When<span class="era-lede" id="whenLede"></span><span class="era-chev" aria-hidden="true">&#8964;</span></summary>
+      <div class="era-body" id="whenBody"></div>
+    </details>
+    <details class="card when" id="whereCard">
+      <summary>Where<span class="era-lede" id="whereLede"></span><span class="era-chev" aria-hidden="true">&#8964;</span></summary>
+      <div class="era-body" id="whereBody"></div>
+    </details>
+  </div>
 
   <div class="card">
     <div class="passage" id="passage"><p class="empty">Loading the chapter&hellip;</p></div>
@@ -1560,6 +1568,13 @@ async function eraLoad(){
 function eraRender(){
   const card = document.getElementById("whenCard");
   if (!card) return;
+  /* Opening either drawer fetches and paints both, because both are read out of the same file.
+     Wired once, on the first render. */
+  const wcard = document.getElementById("whereCard");
+  if (wcard && !wcard.dataset.wired){
+    wcard.dataset.wired = "1";
+    wcard.addEventListener("toggle", function(){ eraRender(); });
+  }
   const lede = document.getElementById("whenLede");
   const body = document.getElementById("whenBody");
   const info = chapterFor(viewDate);
@@ -1666,11 +1681,20 @@ function eraRender(){
   body.appendChild(chips);
 
   const marks = eraMarks(hits, book, chapter);
-  body.appendChild(eraHead("Where it happens"));
-  if (Object.keys(marks).length){
-    body.appendChild(eraMapEl(marks, chron));
-  } else {
-    body.appendChild(eraNote("The timeline ties no place to this chapter."));
+  /* The map is its own section now, so it is painted into the Where drawer rather than appended
+     here. The two are still drawn from the same hits, so they can never disagree. */
+  const wbody = document.getElementById("whereBody");
+  const wlede = document.getElementById("whereLede");
+  if (wbody){
+    wbody.textContent = "";
+    const n = Object.keys(marks).length;
+    if (wlede) wlede.textContent = n ? "\u2014 " + n + (n === 1 ? " place" : " places") + " in this chapter"
+                                     : "\u2014 no place tied to this chapter";
+    if (n){
+      wbody.appendChild(eraMapEl(marks, chron));
+    } else {
+      wbody.appendChild(eraNote("The timeline ties no place to this chapter."));
+    }
   }
 
   body.appendChild(eraNote("Reigns follow " + eraChronName() + "; change that in the Kings tab. " +
