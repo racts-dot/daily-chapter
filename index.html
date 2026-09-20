@@ -199,6 +199,49 @@ svg.era-map{width:100%;height:auto;display:block;margin-top:8px;background:var(-
   stroke-width:3px;stroke-linejoin:round}
 .era-note{font-size:13px;line-height:1.5;color:var(--soft);background:rgba(122,92,46,.07);
   border-radius:10px;padding:9px 11px;margin:12px 0 0}
+/* --- the unfolded map ---------------------------------------------------
+   Her note 20 Sep 2026: "I meant the maps where the scriptires are so more of
+   a unfold map sort", and, asked which map she meant, she chose an UNFOLDING
+   map of the chapter. So the small map in the Where drawer opens out to the
+   whole screen, with a pin on each place the chapter names, and folds back up.
+   Same places, same view, same colours - it is the same map, unfolded. */
+.mapbtn{display:block;width:100%;padding:0;border:0;background:none;cursor:zoom-in}
+.era-map .pin.cap{fill:var(--judah)}
+.era-map .pin.evt{fill:var(--event)}
+.era-map .pin.home{fill:var(--prophet)}
+.era-map .pin.named{fill:var(--good)}
+/* The pin is outlined in the land colour and the hole punched in the same, so
+   it stays a pin against sea, land and a river alike. */
+.era-map .pin{stroke:var(--map-land);stroke-width:2.5;stroke-linejoin:round}
+.era-map .pin-eye{fill:var(--map-land)}
+.fold{position:fixed;inset:0;z-index:40;background:var(--bg);display:flex;flex-direction:column}
+.fold-bar{display:flex;align-items:center;gap:8px;background:var(--card);
+  border-bottom:1px solid var(--line);padding:10px 12px;
+  padding-top:calc(10px + env(safe-area-inset-top,0px))}
+/* min-width:0 or the ellipsis never happens: a flex item will not shrink below
+   its text by default, and a long book name would push the buttons off. */
+.fold-bar b{font-size:16px;margin-right:auto;min-width:0;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+/* nowrap: on a narrow phone "Fold it up" broke over two lines and made the bar
+   twice as tall. The title gives way instead - it is the ellipsis's job. */
+.fold-bar .btn{font-size:15px;padding:8px 14px;white-space:nowrap;flex:none}
+.fold-zoom{font:inherit;font-size:20px;font-weight:700;width:38px;height:38px;flex:none;
+  border:1px solid var(--line);border-radius:50%;background:var(--card);color:var(--ink);cursor:pointer}
+.fold-zoom:disabled{opacity:.35;cursor:default}
+.fold-views{padding:0 12px}
+.fold-views .era-chips{margin:8px 0 0}
+/* The map is deliberately allowed to be BIGGER than the screen - that is what
+   unfolding one means - and the browser's own scrolling moves it about, so
+   there is no drag code to go wrong under a finger. `margin:auto` on the map
+   rather than justify-content: centring a flex child the other way hides the
+   left edge of anything wider than the box, with no way to scroll back to it. */
+.fold-scroll{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;
+  display:flex;padding:10px}
+.fold-scroll svg.era-map{margin:auto;flex:none;max-width:none}
+.fold-foot{background:var(--card);border-top:1px solid var(--line);
+  padding:4px 12px calc(10px + env(safe-area-inset-bottom,0px));max-height:34vh;overflow:auto}
+.fold-foot .era-chips{margin-top:8px}
+body.fold-open{overflow:hidden}
 .memo{max-height:52vh;padding:12px 14px 14px}
 .memo textarea{min-height:16vh;font-size:16px}
 footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
@@ -261,7 +304,7 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
 .toast button{font:inherit;font-size:15px;font-weight:700;background:transparent;border:0;
   color:var(--accent-ink);text-decoration:underline;cursor:pointer;padding:0;white-space:nowrap}
 </style>
-<script src="../textsize.js" data-bottom="126"></script><script src="../feedback.js" defer></script><script src="../notion-sync.js"></script><script src="../marks.js" defer></script><script src="./anydrag.js" defer></script><!-- shell daily-chapter-v45: bump with sw.js CACHE -->
+<script src="../textsize.js" data-bottom="126"></script><script src="../feedback.js" defer></script><script src="../notion-sync.js"></script><script src="../marks.js" defer></script><script src="./anydrag.js" defer></script><!-- shell daily-chapter-v48: bump with sw.js CACHE -->
 </head>
 <body>
 <div class="wrap">
@@ -484,6 +527,26 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
 
 <button id="speakSel" class="btn" style="position:absolute;z-index:31;display:none;
   font-size:14px;padding:6px 12px;border-radius:999px">Speak this</button>
+
+
+<!-- Her note 20 Sep 2026: "I meant the maps where the scriptires are so more of a
+     unfold map sort" - and, asked which map she meant, she chose AN UNFOLDING MAP OF
+     THE CHAPTER. So the small map in the Where drawer opens out into this: the whole
+     screen, a pin on every place the chapter names, and a button that folds it back up.
+     It is filled from kings.html by the same code that draws the small one, so the two
+     can never disagree and there is no second copy of the geography. -->
+<div class="fold hide" id="mapFold" role="dialog" aria-modal="true"
+     aria-label="The map of this chapter, unfolded">
+  <div class="fold-bar">
+    <b id="foldTitle">Where this chapter is</b>
+    <button type="button" class="fold-zoom" id="foldOut" aria-label="Show it smaller" title="Smaller">&#8722;</button>
+    <button type="button" class="fold-zoom" id="foldIn" aria-label="Show it bigger" title="Bigger">+</button>
+    <button type="button" class="btn" id="foldShut">Fold it up</button>
+  </div>
+  <div class="fold-views" id="foldViews"></div>
+  <div class="fold-scroll" id="foldScroll"></div>
+  <div class="fold-foot" id="foldFoot"></div>
+</div>
 
 <div class="fab" id="fab">
   <div class="fabrow">
@@ -1422,50 +1485,66 @@ function eraRail(span, named, chron){
   return wrap;
 }
 
-function eraMapEl(marks, chron){
-  const box = document.createElement("div");
+/* Longitude and latitude onto a view's own units. One copy, because the folded
+   map, the unfolded one and the "is it on this map?" test must all agree. */
+function eraPx(v){
+  const k = v.height / (v.lat[1] - v.lat[0]);
+  return function(p){ return [(p.lon - v.lon[0]) * v.cos_lat * k, (v.lat[1] - p.lat) * k]; };
+}
+function eraOffMap(v, xy){
+  return xy[0] < -2 || xy[1] < -2 || xy[0] > v.width + 2 || xy[1] > v.height + 2;
+}
+function eraMapView(marks){
   const views = eraD.map_paths.views;
   const names = Object.keys(views);
   const inView = function(key){
-    const v = views[key];
-    const k = v.height / (v.lat[1] - v.lat[0]);
-    return Object.keys(marks).every(function(id){
-      const p = eraPL[id];
-      const x = (p.lon - v.lon[0]) * v.cos_lat * k, y = (v.lat[1] - p.lat) * k;
-      return x >= -2 && y >= -2 && x <= v.width + 2 && y <= v.height + 2;
-    });
+    const v = views[key], px = eraPx(v);
+    return Object.keys(marks).every(function(id){ return !eraOffMap(v, px(eraPL[id])); });
   };
   /* Nineveh and Babylon fall off the Israel-and-Judah map, so when this chapter
      reaches that far the wider one is opened instead of quietly hiding them. */
   let view = eraView && views[eraView] ? eraView : null;
   if (!view) view = names.filter(inView)[0] || names[names.length - 1];
-  const v = views[view];
+  return view;
+}
 
-  if (names.length > 1){
-    const row = document.createElement("div");
-    row.className = "era-chips";
-    names.forEach(function(key){
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = "era-chip";
-      b.textContent = views[key].label;
-      b.setAttribute("aria-pressed", String(key === view));
-      if (key === view) b.style.borderColor = "var(--accent)";
-      b.addEventListener("click", function(){ eraView = key; eraRender(); });
-      row.appendChild(b);
-    });
-    box.appendChild(row);
-  }
+/* "Israel and Judah" or "The whole region". Both the folded map and the
+   unfolded one carry this row and both redraw through eraRender, so choosing
+   on one has chosen on the other. */
+function eraViewChips(view){
+  const views = eraD.map_paths.views;
+  const names = Object.keys(views);
+  if (names.length < 2) return null;
+  const row = document.createElement("div");
+  row.className = "era-chips";
+  names.forEach(function(key){
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "era-chip";
+    b.textContent = views[key].label;
+    b.setAttribute("aria-pressed", String(key === view));
+    if (key === view) b.style.borderColor = "var(--accent)";
+    b.addEventListener("click", function(){ eraView = key; eraRender(); });
+    row.appendChild(b);
+  });
+  return row;
+}
 
+/* The map. `big` is the unfolded one: the places this chapter names become
+   PINS rather than dots and the names are set larger, because the point of
+   unfolding a map is to read it. Coastline, rivers, lakes, places and the
+   verse that names each one are the same records either way - kings.html. */
+function eraMapSvg(marks, v, big){
   const esc = function(t){ return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;")
     .replace(/>/g, "&gt;").replace(/"/g, "&quot;"); };
-  const k = v.height / (v.lat[1] - v.lat[0]);
-  const px = function(p){ return [(p.lon - v.lon[0]) * v.cos_lat * k, (v.lat[1] - p.lat) * k]; };
+  const px = eraPx(v);
   /* Sized against the view, not in fixed map units: the two views are 757 and
      1000 units wide, so one fixed radius came out a different size in each and
-     both were three or four pixels on a phone - a smudge, not a marker. */
+     both were three or four pixels on a phone - a smudge, not a marker. The
+     pin's HEAD is that same size, so unfolding never makes a place smaller
+     than it was in the drawer - it grows a point and a name. */
   const hotR = Math.round(v.width / 55), coldR = Math.round(v.width / 130),
-        lblSize = Math.round(v.width / 26);
+        lblSize = Math.round(v.width / (big ? 23 : 26));
   let m = "";
   v.land.forEach(function(d){ m += '<path class="land" d="' + d + '"/>'; });
   v.rivers.forEach(function(r){ r.paths.forEach(function(d){ m += '<path class="river" d="' + d + '"/>'; }); });
@@ -1473,11 +1552,24 @@ function eraMapEl(marks, chron){
   const shown = [];
   eraD.places.places.forEach(function(p){
     const xy = px(p);
-    if (xy[0] < -2 || xy[1] < -2 || xy[0] > v.width + 2 || xy[1] > v.height + 2) return;
+    if (eraOffMap(v, xy)) return;
     const hot = marks[p.id] || "";
-    m += '<circle class="dot ' + hot + '" cx="' + xy[0].toFixed(1) + '" cy="' + xy[1].toFixed(1) +
-         '" r="' + (hot ? hotR : coldR) + '"><title>' + esc(p.name) + '</title></circle>';
-    if (hot) shown.push([p.name, xy[0], xy[1]]);
+    if (hot && big){
+      /* A pin: a round head standing above the place on a point that touches
+         it, so the tip is the actual spot and the name hangs off the head. */
+      const R = hotR, cx = xy[0], cy = xy[1], hy = cy - R * 2.6;
+      m += '<path class="pin ' + hot + '" d="M ' + cx.toFixed(1) + ' ' + cy.toFixed(1) +
+           ' L ' + (cx - R * 0.87).toFixed(1) + ' ' + (hy + R * 0.5).toFixed(1) +
+           ' A ' + R + ' ' + R + ' 0 1 1 ' + (cx + R * 0.87).toFixed(1) + ' ' +
+           (hy + R * 0.5).toFixed(1) + ' Z"><title>' + esc(p.name) + '</title></path>' +
+           '<circle class="pin-eye" cx="' + cx.toFixed(1) + '" cy="' + hy.toFixed(1) +
+           '" r="' + (R * 0.34).toFixed(1) + '"/>';
+      shown.push([p.name, cx + R * 1.2, hy + lblSize * 0.35]);
+    } else {
+      m += '<circle class="dot ' + hot + '" cx="' + xy[0].toFixed(1) + '" cy="' + xy[1].toFixed(1) +
+           '" r="' + (hot ? hotR : coldR) + '"><title>' + esc(p.name) + '</title></circle>';
+      if (hot) shown.push([p.name, xy[0] + hotR * 1.6, xy[1] + lblSize * 0.35]);
+    }
   });
   /* Tirzah and Samaria are about ten kilometres apart and their labels printed
      on top of each other as "Samariah". Nudge a label down when it would land on
@@ -1485,10 +1577,10 @@ function eraMapEl(marks, chron){
   shown.sort(function(a, b){ return a[2] - b[2]; });
   let lastY = -Infinity, lastX = -Infinity;
   shown.forEach(function(a){
-    let y = a[2] + lblSize * 0.35;
+    let y = a[2];
     if (y - lastY < lblSize && Math.abs(a[1] - lastX) < lblSize * 5) y = lastY + lblSize;
     lastY = y; lastX = a[1];
-    m += '<text class="lbl" font-size="' + lblSize + '" x="' + (a[1] + hotR * 1.6).toFixed(1) +
+    m += '<text class="lbl" font-size="' + lblSize + '" x="' + a[1].toFixed(1) +
          '" y="' + y.toFixed(1) + '">' + esc(a[0]) + '</text>';
   });
   const holder = document.createElement("div");
@@ -1497,47 +1589,203 @@ function eraMapEl(marks, chron){
     ': coastline, lakes and rivers only, with the places this chapter touches marked. No borders are drawn."></svg>';
   const svg = holder.firstChild;
   svg.innerHTML = m;
-  box.appendChild(svg);
+  svg.dataset.aspect = (v.width / v.height).toFixed(4);
+  return svg;
+}
 
-  /* Her note asks for the tap "on the bottom of the map". The dots are a few
-     pixels across on a phone and cannot be hit, so every marked place is a
-     button under the map as well. */
+/* Her note asks for the tap "on the bottom of the map". The dots are a few
+   pixels across on a phone and cannot be hit, so every marked place is a
+   button under the map as well - under the folded map and the unfolded one. */
+function eraPlaceChips(marks, v, saidId){
+  const box = document.createElement("div");
   const ids = Object.keys(marks);
-  if (ids.length){
-    const row = document.createElement("div");
-    row.className = "era-chips";
-    ids.forEach(function(id){
-      const p = eraPL[id], hot = marks[id], xy = px(p);
-      const off = xy[0] < -2 || xy[1] < -2 || xy[0] > v.width + 2 || xy[1] > v.height + 2;
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = "era-chip";
-      const i = document.createElement("i");
-      i.style.background = eraDotColour(hot);
-      b.appendChild(i);
-      b.appendChild(document.createTextNode(p.name + (off ? " (off this map)" : "")));
-      b.addEventListener("click", function(){
-        eraSay("eraSaidMap", p.name + " — " + ERA_KINDS[hot] +
-          (p.identified_with ? ", identified with " + p.identified_with : "") +
-          (p.verse ? ". Cited from " + prettyRef(p.verse) + "." : "") +
-          (off ? " Not drawn on this map." : ""));
-      });
-      row.appendChild(b);
+  if (!ids.length) return box;
+  const px = eraPx(v);
+  const row = document.createElement("div");
+  row.className = "era-chips";
+  ids.forEach(function(id){
+    const p = eraPL[id], hot = marks[id], off = eraOffMap(v, px(p));
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "era-chip";
+    const i = document.createElement("i");
+    i.style.background = eraDotColour(hot);
+    b.appendChild(i);
+    b.appendChild(document.createTextNode(p.name + (off ? " (off this map)" : "")));
+    b.addEventListener("click", function(){
+      eraSay(saidId, p.name + " — " + ERA_KINDS[hot] +
+        (p.identified_with ? ", identified with " + p.identified_with : "") +
+        (p.verse ? ". Cited from " + prettyRef(p.verse) + "." : "") +
+        (off ? " Not drawn on this map." : ""));
     });
-    box.appendChild(row);
-    /* Only the kinds actually on this map, so the key never names a colour that
-       is not there. */
-    const kinds = [];
-    ids.forEach(function(id){ if (kinds.indexOf(marks[id]) < 0) kinds.push(marks[id]); });
-    const key = document.createElement("p");
-    key.className = "era-key";
-    key.textContent = kinds.map(function(kind){ return ERA_DOTS[kind] + " " + ERA_KINDS[kind]; })
-      .join(" · ") + ". Tap a place to read it out.";
-    box.appendChild(key);
-    box.appendChild(eraSaidLine("eraSaidMap"));
-  }
+    row.appendChild(b);
+  });
+  box.appendChild(row);
+  /* Only the kinds actually on this map, so the key never names a colour that
+     is not there. */
+  const kinds = [];
+  ids.forEach(function(id){ if (kinds.indexOf(marks[id]) < 0) kinds.push(marks[id]); });
+  const key = document.createElement("p");
+  key.className = "era-key";
+  key.textContent = kinds.map(function(kind){ return ERA_DOTS[kind] + " " + ERA_KINDS[kind]; })
+    .join(" · ") + ". Tap a place to read it out.";
+  box.appendChild(key);
+  box.appendChild(eraSaidLine(saidId));
   return box;
 }
+
+function eraMapEl(marks){
+  const box = document.createElement("div");
+  const view = eraMapView(marks);
+  const v = eraD.map_paths.views[view];
+  const chips = eraViewChips(view);
+  if (chips) box.appendChild(chips);
+
+  /* Tapping the small map is the obvious way to ask for the big one, so the map
+     itself is the button - and there is a worded button under it too, because a
+     picture that happens to be tappable tells nobody that it is. */
+  const tap = document.createElement("button");
+  tap.type = "button";
+  tap.className = "mapbtn";
+  tap.setAttribute("aria-label", "Unfold this map to the whole screen");
+  tap.appendChild(eraMapSvg(marks, v, false));
+  tap.addEventListener("click", function(){ eraFoldOpen(); });
+  box.appendChild(tap);
+
+  const row = document.createElement("div");
+  row.className = "row";
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "btn ghost";
+  b.id = "unfoldMap";
+  b.textContent = "Unfold the map";
+  b.addEventListener("click", function(){ eraFoldOpen(); });
+  row.appendChild(b);
+  box.appendChild(row);
+
+  box.appendChild(eraPlaceChips(marks, v, "eraSaidMap"));
+  return box;
+}
+
+/* --- the unfolded map ----------------------------------------------------
+   Her note 20 Sep 2026: "I meant the maps where the scriptires are so more of a
+   unfold map sort", and, asked which map she meant, she chose AN UNFOLDING MAP
+   OF THE CHAPTER. So the Where drawer's small map opens out to the whole
+   screen with a pin on each place this chapter names, and folds back up again.
+   It holds no geography of its own: it asks eraMapSvg for the same map the
+   drawer draws, at a size worth reading.
+   The zooms are multiples of "the whole map on the screen", worked out from the
+   room there actually is: the two views are different shapes, and a phone and a
+   laptop are different again, so a number written in here would be wrong on
+   something. */
+const ERA_ZOOMS = [1, 1.5, 2, 3, 4];
+let eraFoldOn = false, eraFoldZoom = 0, eraFoldMarks = null, eraFoldRef = "";
+
+function eraFoldOpen(){
+  if (!eraD || !eraFoldMarks || !Object.keys(eraFoldMarks).length) return;
+  const el = document.getElementById("mapFold");
+  if (!el) return;
+  eraFoldOn = true;
+  eraFoldZoom = 0;
+  el.classList.remove("hide");
+  document.body.classList.add("fold-open");
+  eraFoldPaint();
+  const shut = document.getElementById("foldShut");
+  if (shut) shut.focus();
+}
+function eraFoldShut(){
+  const el = document.getElementById("mapFold");
+  if (!el || !eraFoldOn) return;
+  eraFoldOn = false;
+  el.classList.add("hide");
+  document.body.classList.remove("fold-open");
+  /* Emptied on the way out: a map left in there is last chapter's map, and it
+     would be the thing she saw for an instant the next time it opened. */
+  document.getElementById("foldScroll").textContent = "";
+  document.getElementById("foldFoot").textContent = "";
+  document.getElementById("foldViews").textContent = "";
+  const back = document.getElementById("unfoldMap");
+  if (back) back.focus();
+}
+function eraFoldPaint(){
+  if (!eraFoldOn || !eraD) return;
+  const marks = eraFoldMarks || {};
+  /* Paged on to a chapter with no place tied to it while it was open: there is
+     nothing to show, so fold it up rather than show an empty map. */
+  if (!Object.keys(marks).length){ eraFoldShut(); return; }
+  const view = eraMapView(marks);
+  const v = eraD.map_paths.views[view];
+  document.getElementById("foldTitle").textContent =
+    eraFoldRef ? "Where " + eraFoldRef + " is" : "Where this chapter is";
+  const views = document.getElementById("foldViews");
+  views.textContent = "";
+  const chips = eraViewChips(view);
+  if (chips) views.appendChild(chips);
+  const scroll = document.getElementById("foldScroll");
+  scroll.textContent = "";
+  scroll.appendChild(eraMapSvg(marks, v, true));
+  const foot = document.getElementById("foldFoot");
+  foot.textContent = "";
+  foot.appendChild(eraPlaceChips(marks, v, "eraSaidFold"));
+  eraFoldFit(eraMarksMiddle(marks, v));
+}
+/* The middle of the places this chapter names, as a fraction across the map.
+   Zoomed in, the map is bigger than the screen, and a map that opens on a
+   corner of the sea is the one thing worse than a map that is too small. */
+function eraMarksMiddle(marks, v){
+  const px = eraPx(v);
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, n = 0;
+  Object.keys(marks).forEach(function(id){
+    const xy = px(eraPL[id]);
+    if (eraOffMap(v, xy)) return;
+    n++;
+    x0 = Math.min(x0, xy[0]); x1 = Math.max(x1, xy[0]);
+    y0 = Math.min(y0, xy[1]); y1 = Math.max(y1, xy[1]);
+  });
+  if (!n) return null;
+  return { x: (x0 + x1) / 2 / v.width, y: (y0 + y1) / 2 / v.height };
+}
+/* `at` is where to look, as fractions of the map: the places when it is first
+   unfolded, and otherwise wherever she had got to, so pressing + zooms into
+   what is on screen rather than throwing her back to the top left. */
+function eraFoldFit(at){
+  const scroll = document.getElementById("foldScroll");
+  const svg = scroll && scroll.querySelector("svg");
+  if (!svg) return;
+  const aspect = Number(svg.dataset.aspect) || 1;
+  const aw = Math.max(120, scroll.clientWidth - 20), ah = Math.max(120, scroll.clientHeight - 20);
+  const whole = Math.min(aw, ah * aspect);   /* the width at which all of it fits */
+  /* getBoundingClientRect, not offsetWidth: an SVG element has no offsetWidth
+     at all, so the first go at this quietly worked out NaN and never moved. */
+  const drawn = function(){ const r = svg.getBoundingClientRect(); return { w:r.width, h:r.height }; };
+  const was = drawn();
+  const look = at || (was.w ? { x: (scroll.scrollLeft + scroll.clientWidth / 2) / was.w,
+                                y: (scroll.scrollTop + scroll.clientHeight / 2) / was.h } : null);
+  svg.style.width = Math.round(whole * ERA_ZOOMS[eraFoldZoom]) + "px";
+  if (look){
+    const now = drawn();
+    scroll.scrollLeft = look.x * now.w - scroll.clientWidth / 2;
+    scroll.scrollTop = look.y * now.h - scroll.clientHeight / 2;
+  }
+  const out = document.getElementById("foldOut"), inn = document.getElementById("foldIn");
+  if (out) out.disabled = eraFoldZoom === 0;
+  if (inn) inn.disabled = eraFoldZoom === ERA_ZOOMS.length - 1;
+}
+function eraFoldStep(by){
+  const next = Math.max(0, Math.min(ERA_ZOOMS.length - 1, eraFoldZoom + by));
+  if (next === eraFoldZoom) return;
+  eraFoldZoom = next;
+  eraFoldFit();
+}
+(function wireFold(){
+  if (!document.getElementById("mapFold")) return;
+  document.getElementById("foldShut").addEventListener("click", eraFoldShut);
+  document.getElementById("foldIn").addEventListener("click", function(){ eraFoldStep(1); });
+  document.getElementById("foldOut").addEventListener("click", function(){ eraFoldStep(-1); });
+  /* Turning the phone sideways changes how much room there is, and the zoom is
+     a multiple of that room, so it is worked out again rather than kept. */
+  window.addEventListener("resize", function(){ if (eraFoldOn) eraFoldFit(); });
+})();
 
 async function eraLoad(){
   if (eraD || eraLoading) return;
@@ -1578,22 +1826,35 @@ function eraRender(){
   const lede = document.getElementById("whenLede");
   const body = document.getElementById("whenBody");
   const info = chapterFor(viewDate);
-  const open = card.hasAttribute("open");
+  /* EITHER drawer counts as opened. It used to read only the When card, so
+     opening Where on its own never fetched kings.html and the drawer sat empty
+     until When had been opened too - found 20 Sep while making the map unfold. */
+  const wlede0 = document.getElementById("whereLede");
+  const open = card.hasAttribute("open") || !!(wcard && wcard.hasAttribute("open"));
   body.textContent = "";
 
   if (!open){
     /* Shut and never opened: nothing is fetched and nothing is claimed. */
-    if (!eraD) { lede.textContent = "— this chapter on the kings timeline"; return; }
+    if (!eraD) {
+      lede.textContent = "— this chapter on the kings timeline";
+      if (wlede0) wlede0.textContent = "— the places this chapter names, on a map";
+      return;
+    }
   }
   if (!eraD){
     if (eraFailed){
       lede.textContent = "— could not be opened";
+      if (wlede0) wlede0.textContent = "— could not be opened";
       body.appendChild(eraNote("The timeline could not be loaded. It is part of this app, so " +
         "this is almost certainly no signal on a device that has not opened the Kings tab yet. " +
         "It will work once it has."));
+      const wb = document.getElementById("whereBody");
+      if (wb){ wb.textContent = ""; wb.appendChild(eraNote("The map is in the same file, so it " +
+        "could not be opened either.")); }
       return;
     }
     lede.textContent = "— opening…";
+    if (wlede0) wlede0.textContent = "— opening…";
     body.appendChild(eraNote("Opening the timeline…"));
     eraLoad();
     return;
@@ -1621,6 +1882,11 @@ function eraRender(){
       body.appendChild(q);
     }
     body.appendChild(eraOpenFull());
+    /* The Where drawer is emptied on this path too. It used to be left alone,
+       so paging from a chapter the timeline does cite to one it does not left
+       last chapter's map sitting under the word "Where" - and now that the map
+       unfolds, it would have unfolded the wrong chapter. */
+    eraWhereEmpty("The timeline ties no place to this chapter.");
     return;
   }
 
@@ -1685,17 +1951,25 @@ function eraRender(){
      here. The two are still drawn from the same hits, so they can never disagree. */
   const wbody = document.getElementById("whereBody");
   const wlede = document.getElementById("whereLede");
+  const n = Object.keys(marks).length;
+  /* What the unfolded map draws is this same set of places, held here rather
+     than passed in, because the unfolded map is painted from a button press
+     and from here, and both have to mean the chapter now on screen. */
+  eraFoldMarks = n ? marks : null;
+  eraFoldRef = book ? prettyRef(book + " " + chapter) : "";
   if (wbody){
     wbody.textContent = "";
-    const n = Object.keys(marks).length;
     if (wlede) wlede.textContent = n ? "\u2014 " + n + (n === 1 ? " place" : " places") + " in this chapter"
                                      : "\u2014 no place tied to this chapter";
     if (n){
-      wbody.appendChild(eraMapEl(marks, chron));
+      wbody.appendChild(eraMapEl(marks));
     } else {
       wbody.appendChild(eraNote("The timeline ties no place to this chapter."));
     }
   }
+  /* Open while she paged to another chapter: redraw it rather than leave the
+     old one up. It folds itself away if the new chapter has no place. */
+  if (eraFoldOn) eraFoldPaint();
 
   body.appendChild(eraNote("Reigns follow " + eraChronName() + "; change that in the Kings tab. " +
     "Nothing here is guessed: a chapter appears only where the timeline quotes a verse inside it. " +
@@ -1705,6 +1979,16 @@ function eraRender(){
   body.appendChild(eraOpenFull());
 }
 
+/* The Where drawer with nothing in it. Its own function so the path that finds
+   nothing cannot quietly leave the last chapter's map sitting there. */
+function eraWhereEmpty(text){
+  eraFoldMarks = null;
+  if (eraFoldOn) eraFoldShut();
+  const wbody = document.getElementById("whereBody");
+  const wlede = document.getElementById("whereLede");
+  if (wlede) wlede.textContent = "\u2014 no place tied to this chapter";
+  if (wbody){ wbody.textContent = ""; wbody.appendChild(eraNote(text)); }
+}
 function eraHead(text){
   const h = document.createElement("p");
   h.className = "era-h";
@@ -3163,6 +3447,8 @@ document.addEventListener("keydown", function(ev){
   if (ev.key !== "Escape") return;
   if (!document.getElementById("memoPanel").classList.contains("hide")) memoOpen(false);
   if (!document.getElementById("snagPanel").classList.contains("hide")) snagOpen(false);
+  /* The unfolded map covers the screen, so Escape has to fold it up as well. */
+  if (eraFoldOn) eraFoldShut();
 });
 
 window.addEventListener("beforeunload", function(){ saveEntry(false); });
