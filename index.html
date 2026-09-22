@@ -2664,14 +2664,14 @@ document.getElementById("reloadText").addEventListener("click", function(){ load
     ev.preventDefault();
     const text = (window.getSelection() || "").toString().trim();
     if (!text) return hide();
-    if (!("speechSynthesis" in window)){ toast("This browser cannot read aloud", null, null); return; }
-    window.speechSynthesis.cancel();
-    const say = new SpeechSynthesisUtterance(text);
-    say.rate = settings.rate || 0.95;
-    const chosen = currentVoice();
-    if (chosen){ say.voice = chosen; say.lang = chosen.lang; }
-    window.speechSynthesis.speak(say);
     hide();
+    /* 19 Sep 2026: this used the phone voice every time, whatever else was set.
+       Her pick reads it now, or it says why - it never drops back to Karen. */
+    sayWithNaturalVoice(text).then(function(ok){
+      if (ok) return;
+      if (!recPass()){ connectThisDevice().then(function(c){ if (c) sayWithNaturalVoice(text); }); return; }
+      toast("The natural voice could not be reached just now", null, null);
+    });
   });
 })();
 document.getElementById("listenBtn").addEventListener("click", function(){
@@ -2679,6 +2679,11 @@ document.getElementById("listenBtn").addEventListener("click", function(){
 });
 document.getElementById("playStop").addEventListener("click", stopListening);
 document.getElementById("playPause").addEventListener("click", function(ev){
+  if (recAudio){
+    if (recAudio.paused){ recAudio.play(); ev.target.textContent = "Pause"; }
+    else { recAudio.pause(); ev.target.textContent = "Play"; }
+    return;
+  }
   const s2 = window.speechSynthesis;
   if (!s2) return;
   if (s2.paused){ s2.resume(); ev.target.textContent = "Pause"; }
@@ -2688,6 +2693,7 @@ document.getElementById("playRate").addEventListener("input", function(ev){
   settings.rate = parseFloat(ev.target.value);
   jset("settings", settings);
   document.getElementById("rateNow").textContent = settings.rate.toFixed(1) + "x";
+  if (recAudio){ try { recAudio.playbackRate = settings.rate; } catch (e){} return; }
   if (readChunks.length) speakFrom(readAt);   /* carry on, at the new speed */
 });
 document.getElementById("saveDayBtn").addEventListener("click", function(){
@@ -3001,7 +3007,7 @@ if ("speechSynthesis" in window){
   window.speechSynthesis.onvoiceschanged = fillVoices;
 }
 
-function speaking(){ return window.speechSynthesis && window.speechSynthesis.speaking; }
+function speaking(){ return !!(recAudio && !recAudio.paused) || !!(window.speechSynthesis && window.speechSynthesis.speaking); }
 
 let readChunks = [];
 let readAt = 0;
@@ -3018,6 +3024,7 @@ function showPlayer(on){
 function stopListening(){
   wantSpeech = false;
   releaseScreen();
+  if (recAudio){ try { recAudio.pause(); recAudio.currentTime = 0; } catch (e){} recAudio = null; }
   if (window.speechSynthesis) window.speechSynthesis.cancel();
   readChunks = [];
   readAt = 0;
@@ -3048,13 +3055,129 @@ function speakFrom(index){
   document.getElementById("playPause").textContent = "Pause";
 }
 
-function startListening(){
-  if (!("speechSynthesis" in window)){
-    toast("This browser cannot read aloud", null, null);
-    return;
-  }
+/* ---- HER OWN RECORDING OF THIS CHAPTER, 19 Sep 2026 ----------------------
+   The whole NLT is recorded in her chosen voice and kept in a PRIVATE R2
+   bucket - the text is licensed, so it is never on a public URL. The relay
+   mints a signed link per chapter, because an <audio src> CANNOT send a
+   password header and a cross-site cookie is blocked by Safari.
+   Every failure here falls through to the live phone voice below: no password
+   on this device, a chapter not recorded, no internet. Read aloud never just
+   stops working, it only sounds less good.
+-------------------------------------------------------------------------- */
+const REC_RELAY = "https://apps-notion-relay.apps-notion-relay.workers.dev";
+let recAudio = null;
+
+function recPass(){
+  try {
+    const raw = localStorage.getItem("notionSync.pass");
+    if (!raw) return null;
+    const p = JSON.parse(raw);
+    return (typeof p === "string" && p) ? p : null;
+  } catch (e){ return null; }
+}
+
+/* "1 Kings 19" -> "1_Kings_19.mp3". The recordings were named from this very
+   book list, so Song of Solomon is Song_of_Solomon and Psalms stays Psalms. */
+function recKey(){
+  const now = chapterFor(viewDate);
+  if (!now || now.state !== "ok" || !now.item || !now.item.ref) return null;
+  return String(now.item.ref).trim().replace(/\s+/g, "_") + ".mp3";
+}
+
+/* Selected text, or a chapter with no recording, goes to the relay's /tts -
+   her own Google key, capped there at 1,500 characters a request. */
+/* 19 Sep 2026: this page has no "Connect to Notion" button - it never saves
+   anything to Notion - so a device with no apps password had NO WAY to turn the
+   natural voice on, and was simply told to connect. That is an instruction she
+   could not follow. It now asks for the password here, checks it against the
+   relay before keeping it, and stores it exactly where every other app looks.
+   Nothing is sent anywhere until the relay says the password is right. */
+async function connectThisDevice(){
+  let pw = null;
+  try { pw = window.prompt("Enter your apps password once to turn on the natural voice on this device:"); }
+  catch (e){ return false; }
+  pw = (pw || "").trim();
+  if (!pw) return false;
+  try {
+    const r = await fetch(REC_RELAY + "/ping", { headers: { "X-Pass": pw } });
+    if (!r.ok){
+      toast(r.status === 401 ? "That password was not right" : "Could not check the password just now", null, null);
+      return false;
+    }
+  } catch (e){ toast("No internet, so the password cannot be checked", null, null); return false; }
+  try { localStorage.setItem("notionSync.pass", JSON.stringify(pw)); } catch (e){ return false; }
+  toast("This device is connected \u2014 the natural voice is on", null, null);
+  return true;
+}
+
+async function sayWithNaturalVoice(text){
+  const pw = recPass(); if (!pw || !text) return false;
+  try {
+    const r = await fetch(REC_RELAY + "/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Pass": pw },
+      body: JSON.stringify({ text: String(text).slice(0, 1500) })
+    });
+    if (!r.ok) return false;
+    const b = await r.blob();
+    if (!b || !b.size) return false;
+    const a = new Audio(URL.createObjectURL(b));
+    a.playbackRate = settings.rate || 1;
+    a.addEventListener("ended", stopListening);
+    await a.play();
+    if (recAudio){ try { recAudio.pause(); } catch (e){} }
+    recAudio = a;
+    wantSpeech = true;
+    holdScreenAwake();
+    showPlayer(true);
+    return true;
+  } catch (e){ return false; }
+}
+
+async function playRecording(){
+  const pw = recPass(); if (!pw) return false;
+  const key = recKey(); if (!key) return false;
+  let src;
+  try {
+    const r = await fetch(REC_RELAY + "/audio-token?ch=" + encodeURIComponent(key),
+                          { headers: { "X-Pass": pw } });
+    if (!r.ok) return false;
+    const j = await r.json();
+    if (!j || !j.ok || !j.url) return false;
+    src = REC_RELAY + j.url;
+  } catch (e){ return false; }
+
+  try {
+    const a = new Audio(src);
+    a.preload = "auto";
+    a.playbackRate = settings.rate || 1;
+    a.addEventListener("ended", stopListening);
+    a.addEventListener("error", function(){ recAudio = null; });
+    await a.play();
+    recAudio = a;
+  } catch (e){ recAudio = null; return false; }
+
+  wantSpeech = true;
+  holdScreenAwake();
+  showPlayer(true);
+  return true;
+}
+
+async function startListening(){
+  if (await playRecording()) return;     /* her voice, already recorded */
+  /* 19 Sep 2026, her words: "how about you get rid of karen". Karen is the
+     phone's own voice, and it used to take over in silence - which is why this
+     page sounded unchanged all day while everything behind it worked. It now
+     says what is wrong. The cost, stated plainly: with no internet, or on a
+     device that has never been connected, there is no read aloud here at all. */
+  if (!recPass() && !(await connectThisDevice())) return;
+  if (await playRecording()) return;     /* now connected - her recording */
   const text = readingText();
   if (!text){ toast("No chapter loaded to read", null, null); return; }
+  if (await sayWithNaturalVoice(text)) return;
+  toast("The natural voice could not be reached just now", null, null);
+  return;
+  /* eslint-disable no-unreachable */
 
   const pieces = text.match(/[^.!?]+[.!?]*\s*/g) || [text];
   readChunks = [];
