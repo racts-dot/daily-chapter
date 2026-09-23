@@ -137,8 +137,12 @@ async function open(browser, opts){
     });
     ok('bar fits the screen', bar.width <= 344, bar.width + 'px');
     ok('bar is centred', Math.abs(bar.offCentre) <= 1, 'off by ' + bar.offCentre);
-    ok('four arrows present', ['⌃','‹','›','⌄'].every(a => bar.buttons.includes(a)),
+    ok('up and down arrows present', ['⌃','⌄'].every(a => bar.buttons.includes(a)),
        bar.buttons.join(' '));
+    /* her note 23 Sep 2026: "the right left arrows should disappear" - swipe moves chapter */
+    ok('no left/right chapter arrows', !['‹','›'].some(a => bar.buttons.includes(a)),
+       bar.buttons.join(' '));
+    ok('Journal is not a tab in the bar', !bar.buttons.includes('Journal'), bar.buttons.join(' '));
     ok('tabs live in the bar, not the top',
        await page.evaluate(() => !document.querySelector('.wrap > nav') && !!document.querySelector('#fab nav')));
     ok('page never scrolls sideways',

@@ -304,7 +304,7 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
 .toast button{font:inherit;font-size:15px;font-weight:700;background:transparent;border:0;
   color:var(--accent-ink);text-decoration:underline;cursor:pointer;padding:0;white-space:nowrap}
 </style>
-<script src="../textsize.js" data-bottom="126"></script><script src="../feedback.js" defer></script><script src="../notion-sync.js"></script><script src="../marks.js" defer></script><script src="./anydrag.js" defer></script><!-- shell daily-chapter-v48: bump with sw.js CACHE -->
+<script src="../textsize.js" data-bottom="126"></script><script src="../feedback.js" defer></script><script src="../notion-sync.js"></script><script src="../marks.js" defer></script><script src="./anydrag.js" defer></script><!-- shell daily-chapter-v51: bump with sw.js CACHE -->
 </head>
 <body>
 <div class="wrap">
@@ -415,6 +415,16 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
 </section>
 
 <section id="tab-settings" class="hide">
+  <!-- Her note 23 Sep 2026: "Journal should probably go with the settings". So the
+       Journal is no longer a tab in the bar; it opens from here. -->
+  <div class="card">
+    <h3 style="margin:0 0 6px;font-size:17px">Journal</h3>
+    <p class="sub">Everything you have written, your streak, search and downloads.</p>
+    <div class="row" style="margin-top:0">
+      <button class="btn" id="openJournal">Open the journal</button>
+    </div>
+  </div>
+
   <div class="card">
     <h3 style="margin:0 0 6px;font-size:17px">Where you are</h3>
     <p class="sub" id="whereNow"></p>
@@ -551,15 +561,12 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
 <div class="fab" id="fab">
   <div class="fabrow">
     <button id="fabUp" aria-label="Up the page" title="Up the page">&#8963;</button>
-    <button id="fabPrev" aria-label="Previous chapter" title="Previous chapter">&#8249;</button>
-    <button id="fabNext" aria-label="Next chapter" title="Next chapter">&#8250;</button>
     <button id="fabDown" aria-label="Down the page" title="Down the page">&#8964;</button>
     <button id="fabMemo" class="wide" aria-label="Quick note">Note</button>
     <button id="fabAll" class="wide plain" aria-label="Go to all the writing boxes">Boxes</button>
   </div>
   <nav role="tablist">
     <button role="tab" id="tab-btn-today" aria-selected="true" data-tab="today">Today</button>
-    <button role="tab" id="tab-btn-journal" aria-selected="false" data-tab="journal">Journal</button>
     <button role="tab" id="tab-btn-kings" aria-selected="false" data-tab="kings">Kings</button>
     <button role="tab" id="tab-btn-settings" aria-selected="false" data-tab="settings">Settings</button>
   </nav>
@@ -2320,7 +2327,7 @@ function firstUnreadDate(){
 
 /* -------------------------------- render -------------------------------- */
 function renderHeader(){
-  /* The header is gone from the page; the streak lives on the Journal tab.
+  /* The header is gone from the page; the streak lives in the Journal (opened from Settings).
      Kept as a no-op guard so a future header does not need new wiring. */
   const el = document.getElementById("streak");
   if (!el) return;
@@ -2446,7 +2453,9 @@ function goTo(dateStr){
 function showTab(name){
   ["today","journal","kings","settings"].forEach(function(t){
     document.getElementById("tab-" + t).classList.toggle("hide", t !== name);
-    document.getElementById("tab-btn-" + t).setAttribute("aria-selected", String(t === name));
+    /* The Journal has no tab of its own now - it opens from Settings, so Settings stays lit. */
+    const tb = document.getElementById("tab-btn-" + t);
+    if (tb) tb.setAttribute("aria-selected", String(t === (name === "journal" ? "settings" : name)));
   });
   if (name === "journal") renderList();
   if (name === "kings") { const f = document.getElementById("kingsFrame"); if (!f.getAttribute("src")) f.setAttribute("src", "kings.html"); }
@@ -2459,6 +2468,7 @@ function pageBy(dir){
 document.getElementById("fabUp").addEventListener("click", function(){ pageBy(-1); });
 document.getElementById("fabDown").addEventListener("click", function(){ pageBy(1); });
 
+document.getElementById("openJournal").addEventListener("click", function(){ showTab("journal"); window.scrollTo({ top:0 }); });
 document.querySelectorAll("nav button").forEach(function(b){
   b.addEventListener("click", function(){ saveEntry(false); showTab(b.dataset.tab); });
 });
@@ -3341,17 +3351,10 @@ function fabRefresh(){
   /* The bar carries the tabs now, so it stays up on every screen - it only gets
      out of the way when a writing panel is open over it. */
   document.getElementById("fab").classList.toggle("hide", memoOpen || snagUp);
-  /* The chapter arrows mean nothing off the Today screen. Hide that row only. */
+  /* The up/down and note buttons mean nothing off the Today screen. Hide that row only. */
   document.querySelector(".fab .fabrow").classList.toggle("hide", !onToday);
-  if (!onToday) return;
-
-  /* An arrow that leads nowhere is worse than no arrow, so say where it goes. */
-  [["fabPrev", -1], ["fabNext", 1]].forEach(function(pair){
-    const btn = document.getElementById(pair[0]);
-    const info = chapterFor(shift(viewDate, pair[1]));
-    btn.disabled = info.state !== "ok";
-    btn.title = info.state === "ok" ? prettyRef(info.item.ref) : "Nothing there";
-  });
+  /* Her note 23 Sep 2026: "the right left arrows should disappear". The chapter
+     arrows are gone from the bar; swiping left and right still moves chapter. */
 }
 
 function memoOpen(open){
@@ -3371,13 +3374,10 @@ function memoOpen(open){
   fabRefresh();
 }
 
-document.getElementById("fabPrev").addEventListener("click", function(){ goTo(shift(viewDate, -1)); });
-document.getElementById("fabNext").addEventListener("click", function(){ goTo(shift(viewDate,  1)); });
-
 /* --------------------------------- swipe ---------------------------------
-   Drag left for the next chapter, right for the one before - the same two
-   moves as the arrows. Only on the Today tab, only with nothing open over it,
-   and only for a clearly sideways drag, so scrolling the chapter is untouched.
+   Drag left for the next chapter, right for the one before. The on-screen
+   arrows were removed 23 Sep 2026, so this is the way to move chapter.
+   Only on the Today tab, only with nothing open over it, and only for a clearly sideways drag, so scrolling the chapter is untouched.
 ------------------------------------------------------------------------- */
 (function(){
   const MIN_X = 60;    /* pixels across before it counts at all */
