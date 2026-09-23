@@ -2,7 +2,11 @@
    App shell: cache first, so the app opens with no internet.
    Chapter text: network first, falling back to whatever was cached.
    Bump CACHE when index.html changes, or phones keep serving the old one. */
-const CACHE = "daily-chapter-v51";
+const CACHE = "daily-chapter-v52";
+// Every cache this worker makes starts with this. On activate it deletes only
+// caches with this prefix: all the apps share racts-dot.github.io, so deleting
+// every other cache wiped the other apps' offline copies.
+const CACHE_PREFIX = "daily-chapter-";
 const SHELL = ["./", "./index.html", "./kings.html", "./anydrag.js", "./manifest.webmanifest", "./apple-touch-icon.png", "./icon-192.png", "./icon-512.png", "../pull.js", "../marks.js", "../notion-sync.js"];
 
 self.addEventListener("install", function (event) {
@@ -12,7 +16,7 @@ self.addEventListener("install", function (event) {
 self.addEventListener("activate", function (event) {
   event.waitUntil(
     caches.keys().then(function (keys) {
-      return Promise.all(keys.filter(function (k) { return k !== CACHE; }).map(function (k) { return caches.delete(k); }));
+      return Promise.all(keys.filter(function (k) { return k.indexOf(CACHE_PREFIX) === 0 && k !== CACHE; }).map(function (k) { return caches.delete(k); }));
     }).then(function () { return self.clients.claim(); })
   );
 });
