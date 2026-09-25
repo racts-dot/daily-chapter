@@ -2,7 +2,7 @@
    App shell: cache first, so the app opens with no internet.
    Chapter text: network first, falling back to whatever was cached.
    Bump CACHE when index.html changes, or phones keep serving the old one. */
-const CACHE = "daily-chapter-v52";
+const CACHE = "daily-chapter-v53";
 // Every cache this worker makes starts with this. On activate it deletes only
 // caches with this prefix: all the apps share racts-dot.github.io, so deleting
 // every other cache wiped the other apps' offline copies.

@@ -146,12 +146,12 @@ body.show-notes .passage .tn-ref{font-weight:700;margin-right:6px}
     --map-sea:#40708e; --map-land:#1b1814; --map-line:#9a8b73; --map-river:#5b93ae; --map-dot:#9a8e7c;
   }
 }
-.when{padding:12px 14px}
+.when{padding:12px 14px;min-width:0} /* 26 Sep 2026: without min-width:0 the one-line lede held When/Where 9px wider than a phone, so the page slid sideways */
 .when summary{display:flex;align-items:baseline;gap:10px;cursor:pointer;list-style:none;
   font-size:15px;font-weight:600;color:var(--ink)}
 .when summary::-webkit-details-marker{display:none}
 .when summary .era-lede{flex:1;font-weight:400;font-size:14px;color:var(--soft);
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .when summary .era-chev{font-size:12px;color:var(--soft)}
 .when[open] summary .era-chev{visibility:hidden}
 .whenrow{display:grid;gap:12px}
@@ -304,7 +304,7 @@ footer{margin-top:6px;font-size:11px;line-height:1.5;color:var(--soft);
 .toast button{font:inherit;font-size:15px;font-weight:700;background:transparent;border:0;
   color:var(--accent-ink);text-decoration:underline;cursor:pointer;padding:0;white-space:nowrap}
 </style>
-<script src="../textsize.js" data-bottom="126"></script><script src="../feedback.js" defer></script><script src="../notion-sync.js"></script><script src="../marks.js" defer></script><script src="./anydrag.js" defer></script><!-- shell daily-chapter-v51: bump with sw.js CACHE -->
+<script src="../textsize.js" data-bottom="112"></script><script src="../feedback.js" defer></script><script src="../notion-sync.js"></script><script src="../marks.js" defer></script><script src="./anydrag.js" defer></script><!-- shell daily-chapter-v53: bump with sw.js CACHE -->
 </head>
 <body>
 <div class="wrap">
